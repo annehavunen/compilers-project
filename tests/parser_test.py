@@ -170,6 +170,77 @@ def test_parser() -> None:
         else_clause=None,
     )
 
+    assert parse(tokenize("f()")) == ast.FunctionCall(
+        name="f",
+        arguments=[],
+    )
+
+    assert parse(tokenize("print_int(1)")) == ast.FunctionCall(
+        name="print_int",
+        arguments=[ast.Literal(1)],
+    )
+
+    assert parse(tokenize("f(a - 1)")) == ast.FunctionCall(
+        name="f",
+        arguments=[ast.BinaryOp(
+            left=ast.Identifier("a"),
+            op="-",
+            right=ast.Literal(1)
+        )],
+    )
+
+    assert parse(tokenize("f(x, y + z, 1)")) == ast.FunctionCall(
+        name="f",
+        arguments=[ast.Identifier("x"),
+            ast.BinaryOp(
+                left=ast.Identifier("y"),
+                op="+",
+                right=ast.Identifier("z")
+            ),
+            ast.Literal(1)
+        ],
+    )
+
+    assert parse(tokenize("f(if a then b, (2 + 3) * 4)")) == ast.FunctionCall(
+        name="f",
+        arguments=[ast.IfExpression(
+            cond=ast.Identifier("a"),
+            then_clause=ast.Identifier("b"),
+            else_clause=None,
+        ), ast.BinaryOp(
+            left=ast.BinaryOp(
+                left=ast.Literal(2),
+                op="+",
+                right=ast.Literal(3)
+            ),
+            op="*",
+            right=ast.Literal(4)
+        )],
+    )
+
+    assert parse(tokenize("f(fun())")) == ast.FunctionCall(
+        name="f",
+        arguments=[ast.FunctionCall(
+            name="fun",
+            arguments=[]
+        )],
+    )
+
+    assert parse(tokenize("10 * test()")) == ast.BinaryOp(
+        left=ast.Literal(10),
+        op="*",
+        right=ast.FunctionCall(
+            name="test",
+            arguments=[]
+        )
+    )
+
+    assert parse(tokenize("if f() then a")) == ast.IfExpression(
+        cond=ast.FunctionCall(name="f", arguments=[]),
+        then_clause=ast.Identifier("a"),
+        else_clause=None
+    )
+
     with pytest.raises(Exception):
         parse(tokenize(""))
 
@@ -184,3 +255,9 @@ def test_parser() -> None:
     
     with pytest.raises(Exception):
         parse(tokenize("if"))
+
+    with pytest.raises(Exception):
+        parse(tokenize("f(1,)"))
+
+    with pytest.raises(Exception):
+        parse(tokenize("f(1("))

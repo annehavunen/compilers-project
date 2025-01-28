@@ -37,6 +37,20 @@ def parse(tokens: list[Token]) -> ast.Expression:
         else:
             raise Exception(f'{peek().loc}: excepted identifier, found "{token.text}') 
 
+    def parse_function_call(name: str) -> ast.FunctionCall:
+        consume('(')
+        arguments = []
+
+        if peek().text != ')':
+            while True:
+                arguments.append(parse_expression())
+                if peek().text == ')':
+                    break
+                consume(',')
+
+        consume(')')
+        return ast.FunctionCall(name=name, arguments=arguments)
+
     def parse_expression() -> ast.Expression:
         left: ast.Expression = parse_polynomial()
         while peek().text in ['<']:
@@ -69,7 +83,11 @@ def parse(tokens: list[Token]) -> ast.Expression:
         elif peek().type == 'int_literal':
             return parse_literal()
         elif peek().type == 'identifier':
-            return parse_identifier()
+            identifier = parse_identifier()
+            if peek().text == "(":
+                return parse_function_call(identifier.name)
+            else:
+                return identifier
         else:
             raise Exception(f'Unexpected "{peek().text}"')
 

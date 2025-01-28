@@ -1,4 +1,5 @@
 from compiler.tokenizer import Token, tokenize, SourceLocation
+import pytest
 
 
 def test_tokenizer_basics() -> None:
@@ -87,6 +88,9 @@ def test_tokenizer_basics() -> None:
         Token(loc=L, type="int_literal", text='1'),       
     ]
 
+    with pytest.raises(Exception):
+        tokenize("a@")
+
 
 def test_tokenizer_location() -> None:
 
@@ -107,4 +111,26 @@ def test_tokenizer_location() -> None:
     assert tokenize("hello  \n  world") == [
         Token(loc=loc1, type='identifier', text="hello"),
         Token(loc=loc2, type='identifier', text="world"),
+    ]
+
+    loc1 = SourceLocation(file="file_name", line=0, column=0)
+    loc2 = SourceLocation(file="file_name", line=0, column=2)
+    loc3 = SourceLocation(file="file_name", line=0, column=4)
+    assert tokenize("1 + 2") == [
+        Token(loc=loc1, type='int_literal', text="1"),
+        Token(loc=loc2, type='operator', text="+"),
+        Token(loc=loc3, type='int_literal', text="2"),
+    ]
+
+    loc1 = SourceLocation(file="file_name", line=0, column=0)
+    loc2 = SourceLocation(file="file_name", line=0, column=1)
+    loc3 = SourceLocation(file="file_name", line=0, column=2)
+    loc4 = SourceLocation(file="file_name", line=0, column=7)
+    loc5 = SourceLocation(file="file_name", line=0, column=9)
+    assert tokenize("3-name + 1") == [
+        Token(loc=loc1, type='int_literal', text="3"),
+        Token(loc=loc2, type='operator', text="-"),
+        Token(loc=loc3, type='identifier', text="name"),
+        Token(loc=loc4, type='operator', text="+"),
+        Token(loc=loc5, type='int_literal', text="1"),
     ]

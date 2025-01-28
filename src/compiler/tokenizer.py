@@ -2,6 +2,7 @@ from dataclasses import dataclass
 import re
 from typing import Literal
 
+
 @dataclass
 class SourceLocation:
     file: str
@@ -47,7 +48,7 @@ def tokenize(source_code: str, file_name: str = "file_name") -> list[Token]:
     result: list[Token] = []
 
     def append_token(token_type: TokenType, text: str) -> None:
-        nonlocal position
+        nonlocal position, column
 
         location = SourceLocation(file_name, line, column)
         result.append(Token(
@@ -55,6 +56,8 @@ def tokenize(source_code: str, file_name: str = "file_name") -> list[Token]:
             type=token_type,
             text=text
         ))
+
+        column += len(text)
         position += len(text)
 
     while position < len(source_code):

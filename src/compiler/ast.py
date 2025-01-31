@@ -27,6 +27,25 @@ class IfExpression(Expression):
     else_clause: Expression | None
 
 @dataclass
+class WhileExpression(Expression):
+    cond: Expression
+    do_clause: Expression
+
+@dataclass
 class FunctionCall(Expression):
     name: str
     arguments: list[Expression]
+
+@dataclass
+class Block(Expression):
+    arguments: list[Expression]
+
+@dataclass
+class UnaryOp(Expression):
+    op: str
+    exp: Expression
+
+@dataclass
+class VarDeclaration(Expression):
+    name: str
+    value: Expression

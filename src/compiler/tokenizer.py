@@ -38,7 +38,7 @@ def tokenize(source_code: str, file_name: str = "file_name") -> list[Token]:
     whitespace_re = re.compile(r'\s+')
     integer_re = re.compile(r'[0-9]+')
     identifier_re = re.compile(r'[a-zA-Z_][a-zA-Z0-9_]*')
-    operator_re = re.compile(r'==|!=|<=|>=|[-+*/=<>]')
+    operator_re = re.compile(r'==|!=|<=|>=|[-+*/=<>%]')
     punctuation_re = re.compile(r'[(){},;]')
     comment_re = re.compile(r'//.*|#.*')
 

@@ -100,10 +100,64 @@ def test_parser() -> None:
         ),
     )
 
-    assert parse(tokenize("x + 2")) == ast.BinaryOp(
+    assert parse(tokenize("x * (1 / (2 + 3))")) == ast.BinaryOp(
         left=ast.Identifier("x"),
-        op="+",
-        right=ast.Literal(2),
+        op="*",
+        right=ast.BinaryOp(
+            left=ast.Literal(1),
+            op="/",
+            right=ast.BinaryOp(
+                left=ast.Literal(2),
+                op="+",
+                right=ast.Literal(3)
+            )
+        )
+    )
+
+    assert parse(tokenize("10 * 3 % 2")) == ast.BinaryOp(
+        left=ast.BinaryOp(
+            left=ast.Literal(10),
+            op="*",
+            right=ast.Literal(3)
+        ),
+        op="%",
+        right=ast.Literal(2)
+    )
+
+    assert parse(tokenize("n >= 4 + 12")) == ast.BinaryOp(
+        left=ast.Identifier("n"),
+        op=">=",
+        right=ast.BinaryOp(
+            left=ast.Literal(4),
+            op="+",
+            right=ast.Literal(12)
+        )
+    )
+
+    assert parse(tokenize("n != 1 / 2")) == ast.BinaryOp(
+        left=ast.Identifier("n"),
+        op="!=",
+        right=ast.BinaryOp(
+            left=ast.Literal(1),
+            op="/",
+            right=ast.Literal(2)
+        )
+    )
+
+    assert parse(tokenize("x = 1")) == ast.BinaryOp(
+        left=ast.Identifier("x"),
+        op="=",
+        right=ast.Literal(1)
+    )
+
+    assert parse(tokenize("x = y = -1")) == ast.BinaryOp(
+        left=ast.Identifier("x"),
+        op="=",
+        right=ast.BinaryOp(
+            left=ast.Identifier("y"),
+            op="=",
+            right=ast.UnaryOp(op="-", exp=ast.Literal(1))
+        )
     )
 
     assert parse(tokenize("if 1 then 2")) == ast.IfExpression(
@@ -168,6 +222,52 @@ def test_parser() -> None:
             else_clause=ast.Literal(3),
         ),
         else_clause=None,
+    )
+
+    assert parse(tokenize("if a or b == 2 then 1")) == ast.IfExpression(
+        cond=ast.BinaryOp(
+            left=ast.Identifier("a"),
+            op="or",
+            right=ast.BinaryOp(
+                left=ast.Identifier("b"),
+                op="==",
+                right=ast.Literal(2)
+            )
+        ),
+        then_clause=ast.Literal(1),
+        else_clause=None
+    )
+
+    assert parse(tokenize("if (a or b) == 2 then 1")) == ast.IfExpression(
+        cond=ast.BinaryOp(
+            left=ast.BinaryOp(
+                left=ast.Identifier("a"),
+                op="or",
+                right=ast.Identifier("b")
+            ),
+            op="==",
+            right=ast.Literal(2)
+        ),
+        then_clause=ast.Literal(1),
+        else_clause=None
+    )
+
+    assert parse(tokenize("a == 1 or b <= 2 + 3")) == ast.BinaryOp(
+        left=ast.BinaryOp(
+            left=ast.Identifier("a"),
+            op="==",
+            right=ast.Literal(1)
+        ),
+        op="or",
+        right=ast.BinaryOp(
+            left=ast.Identifier("b"),
+            op="<=",
+            right=ast.BinaryOp(
+                left=ast.Literal(2),
+                op="+",
+                right=ast.Literal(3)
+            )
+        )
     )
 
     assert parse(tokenize("f()")) == ast.FunctionCall(
@@ -241,6 +341,120 @@ def test_parser() -> None:
         else_clause=None
     )
 
+    assert parse(tokenize("f(x = n != -2)")) == ast.FunctionCall(
+        name="f",
+        arguments=[ast.BinaryOp(
+            left=ast.Identifier("x"),
+            op="=",
+            right=ast.BinaryOp(
+                left=ast.Identifier("n"),
+                op="!=",
+                right=ast.UnaryOp(op="-", exp=ast.Literal(2))
+            )
+        )]
+    )
+
+    assert parse(tokenize("-1")) == ast.UnaryOp(
+        op="-",
+        exp=ast.Literal(1)
+    )
+
+    assert parse(tokenize("1 + -2")) == ast.BinaryOp(
+        left=ast.Literal(1),
+        op="+",
+        right=ast.UnaryOp(
+            op="-",
+            exp=ast.Literal(2)
+        )
+    )
+
+    assert parse(tokenize("not not x")) == ast.UnaryOp(
+        op="not",
+        exp=ast.UnaryOp(
+            op="not",
+            exp=ast.Identifier("x")
+        )
+    )
+
+    assert parse(tokenize("if not a then 1 else -2")) == ast.IfExpression(
+        cond=ast.UnaryOp(
+            op="not",
+            exp=ast.Identifier("a")
+        ),
+        then_clause=ast.Literal(1),
+        else_clause=ast.UnaryOp(
+            op="-",
+            exp=ast.Literal(2)
+        )
+    )
+
+    assert parse(tokenize("while a do b")) == ast.WhileExpression(
+        cond=ast.Identifier("a"),
+        do_clause=ast.Identifier("b")
+    )
+
+    assert parse(tokenize("while not a do b")) == ast.WhileExpression(
+        cond=ast.UnaryOp(op="not", exp=ast.Identifier("a")),
+        do_clause=ast.Identifier("b")
+    )
+
+    assert parse(tokenize("while a do while b do c")) == ast.WhileExpression(
+        cond=ast.Identifier("a"),
+        do_clause=ast.WhileExpression(
+            cond=ast.Identifier("b"),
+            do_clause=ast.Identifier("c")
+        )
+    )
+
+    assert parse(tokenize("var a = 1")) == ast.VarDeclaration(
+        name="a",
+        value=ast.Literal(1)
+    )
+
+    assert parse(tokenize("var x = if a then b")) == ast.VarDeclaration(
+        name="x",
+        value=ast.IfExpression(
+            cond=ast.Identifier("a"),
+            then_clause=ast.Identifier("b"),
+            else_clause=None
+        )
+    )
+
+    assert parse(tokenize("{}")) == ast.Block(
+        arguments=[]
+    )
+
+    assert parse(tokenize("{a}")) == ast.Block(
+        arguments=[ast.Identifier("a")]
+    )
+
+    assert parse(tokenize("{a;}")) == ast.Block(
+        arguments=[ast.Identifier("a")]
+    )
+
+    assert parse(tokenize("{a;b;c;}")) == ast.Block(
+        arguments=[ast.Identifier("a"),
+                   ast.Identifier("b"),
+                   ast.Identifier("c")]
+    )
+
+    assert parse(tokenize("{var x = 1 + 2; print_int(x)}")) == ast.Block(
+        arguments=[
+            ast.VarDeclaration(
+                name="x",
+                value=ast.BinaryOp(
+                    left=ast.Literal(1),
+                    op="+",
+                    right=ast.Literal(2)
+                )
+            ),
+            ast.FunctionCall(
+                name="print_int",
+                arguments=[ast.Identifier("x")]
+            )
+        ]
+    )
+
     with pytest.raises(Exception):
         parse(tokenize(""))
 
@@ -261,3 +475,15 @@ def test_parser() -> None:
 
     with pytest.raises(Exception):
         parse(tokenize("f(1("))
+
+    with pytest.raises(Exception):
+        parse(tokenize("not"))
+
+    with pytest.raises(Exception):
+        parse(tokenize("while a"))
+
+    with pytest.raises(Exception):
+        parse(tokenize("var a"))
+
+    with pytest.raises(Exception):
+        parse(tokenize("{a, b}"))

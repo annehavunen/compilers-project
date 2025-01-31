@@ -88,6 +88,12 @@ def test_tokenizer_basics() -> None:
         Token(loc=L, type="int_literal", text='1'),       
     ]
 
+    assert tokenize("x % 2") == [
+        Token(loc=L, type="identifier", text='x'),
+        Token(loc=L, type="operator", text='%'),
+        Token(loc=L, type="int_literal", text='2'),
+    ]
+
     with pytest.raises(Exception):
         tokenize("a@")
 

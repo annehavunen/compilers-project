@@ -429,13 +429,22 @@ def test_parser() -> None:
     )
 
     assert parse(tokenize("{a;}")) == ast.Block(
-        arguments=[ast.Identifier("a")]
+        arguments=[ast.Identifier("a"), ast.Literal(None)]
     )
 
     assert parse(tokenize("{a;b;c;}")) == ast.Block(
         arguments=[ast.Identifier("a"),
                    ast.Identifier("b"),
-                   ast.Identifier("c")]
+                   ast.Identifier("c"),
+                   ast.Literal(None)]
+    )
+
+    assert parse(tokenize("{x = y;}")) == ast.Block(
+        arguments=[ast.BinaryOp(
+            left=ast.Identifier("x"),
+            op="=",
+            right=ast.Identifier("y")
+        ), ast.Literal(None)]
     )
 
     assert parse(tokenize("{var x = 1 + 2; print_int(x)}")) == ast.Block(
@@ -451,6 +460,15 @@ def test_parser() -> None:
             ast.FunctionCall(
                 name="print_int",
                 arguments=[ast.Identifier("x")]
+            )
+        ]
+    )
+
+    assert parse(tokenize("{a; {b}}")) == ast.Block(
+        arguments=[
+            ast.Identifier("a"),
+            ast.Block(
+                arguments=[ast.Identifier("b")]
             )
         ]
     )
@@ -487,3 +505,9 @@ def test_parser() -> None:
 
     with pytest.raises(Exception):
         parse(tokenize("{a, b}"))
+
+    with pytest.raises(Exception):
+        parse(tokenize("{;}"))
+
+    with pytest.raises(Exception):
+        parse(tokenize("{a b}"))

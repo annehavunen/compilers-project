@@ -113,10 +113,12 @@ def parse(tokens: list[Token]) -> ast.Expression:
                 arguments.append(parse_expression())
                 if peek().text == '}':
                     break
-                if peek().text == ';':
-                    consume(';')
-                    if peek().text == '}':
-                        break
+                if peek().text != ";":
+                    raise Exception(f'Unexpected "{peek().text}"')
+                consume(';')
+                if peek().text == '}':
+                    arguments.append(ast.Literal(value=None))
+                    break
 
         consume('}')
         return ast.Block(arguments)

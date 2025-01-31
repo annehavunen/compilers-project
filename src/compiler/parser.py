@@ -41,59 +41,32 @@ def parse(tokens: list[Token]) -> ast.Expression:
         return parse_assignment()
 
     def parse_assignment() -> ast.Expression:
-        left: ast.Expression = parse_or()
+        left: ast.Expression = parse_left_associative_operator(0)
         while peek().text == '=':
             op_token = consume()
             right = parse_assignment()
             return ast.BinaryOp(left=left, op=op_token.text, right=right)
         return left
 
-    def parse_or() -> ast.Expression:
-        left: ast.Expression = parse_and()
-        while peek().text == 'or':
-            op_token = consume()
-            right = parse_and()
-            left = ast.BinaryOp(left=left, op=op_token.text, right=right)
-        return left
+    left_associative_operators = [
+        ['or'],
+        ['and'],
+        ['==', '!='],
+        ['<', '<=', '>', '>='],
+        ['+', '-'],
+        ['*', '/', '%'],
+    ]
 
-    def parse_and() -> ast.Expression:
-        left: ast.Expression = parse_equality()
-        while peek().text == 'and':
-            op_token = consume()
-            right = parse_equality()
-            left = ast.BinaryOp(left=left, op=op_token.text, right=right)
-        return left
-
-    def parse_equality() -> ast.Expression:
-        left: ast.Expression = parse_comparison()
-        while peek().text in ['==', '!=']:
-            op_token = consume()
-            right = parse_comparison()
-            left = ast.BinaryOp(left=left, op=op_token.text, right=right)
-        return left
-
-    def parse_comparison() -> ast.Expression:
-        left: ast.Expression = parse_addition()
-        while peek().text in ['<', '>', '<=', '>=']:
-            op_token = consume()
-            right = parse_addition()
-            left = ast.BinaryOp(left=left, op=op_token.text, right=right)
-        return left
-
-    def parse_addition() -> ast.Expression:
-        left: ast.Expression = parse_multiplication()
-        while peek().text in ['+', '-']:
-            op_token = consume()
-            right = parse_multiplication()
-            left = ast.BinaryOp(left=left, op=op_token.text, right=right)
-        return left
-
-    def parse_multiplication() -> ast.Expression:
-        left: ast.Expression = parse_unary()
-        while peek().text in ['*', '/', '%']:
-            op_token = consume()
-            right = parse_unary()
-            left = ast.BinaryOp(left=left, op=op_token.text, right=right)
+    def parse_left_associative_operator(precedence_level: int) -> ast.Expression:
+        if precedence_level >= len(left_associative_operators) - 1:
+            left = parse_unary()
+        else:
+            left = parse_left_associative_operator(precedence_level + 1)
+        if precedence_level < len(left_associative_operators):
+            while peek().text in left_associative_operators[precedence_level]:
+                op_token = consume()
+                right = parse_left_associative_operator(precedence_level + 1)
+                left = ast.BinaryOp(left=left, op=op_token.text, right=right)
         return left
 
     def parse_unary() -> ast.Expression:

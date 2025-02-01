@@ -473,6 +473,20 @@ def test_parser() -> None:
         ]
     )
 
+    assert parse(tokenize("if a then {var x = 1; var y = 2}")) == ast.IfExpression(
+        cond=ast.Identifier("a"),
+        then_clause=ast.Block(
+            arguments=[ast.VarDeclaration(name="x", value=ast.Literal(1)),
+                       ast.VarDeclaration(name="y", value=ast.Literal(2))]
+        ), else_clause=None
+    )
+
+    assert parse(tokenize("while {var x = 1} do a")) == ast.WhileExpression(
+        cond=ast.Block(
+            arguments=[ast.VarDeclaration(name="x", value=ast.Literal(1))]
+        ), do_clause=ast.Identifier("a")
+    )
+
     with pytest.raises(Exception):
         parse(tokenize(""))
 
@@ -511,3 +525,12 @@ def test_parser() -> None:
 
     with pytest.raises(Exception):
         parse(tokenize("{a b}"))
+
+    with pytest.raises(Exception):
+        parse(tokenize("if a then var x = 1"))
+
+    with pytest.raises(Exception):
+        parse(tokenize("while var x = 1 do a"))
+
+    with pytest.raises(Exception):
+        parse(tokenize("f(var x = 1)"))

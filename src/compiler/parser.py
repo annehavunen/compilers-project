@@ -3,6 +3,7 @@ from compiler.tokenizer import Token
 
 
 def parse(tokens: list[Token]) -> ast.Expression:
+    allow_var = True
     pos = 0
 
     def peek() -> Token:
@@ -85,7 +86,7 @@ def parse(tokens: list[Token]) -> ast.Expression:
             return parse_if_expression()
         elif peek().text == 'while':
             return parse_while_expression()
-        elif peek().text == 'var':
+        elif peek().text == 'var' and allow_var:
             return parse_var_declaration()
         elif peek().type == 'int_literal':
             return parse_literal()
@@ -100,6 +101,8 @@ def parse(tokens: list[Token]) -> ast.Expression:
 
     def parse_parenthesized_expression() -> ast.Expression:
         consume('(')
+        nonlocal allow_var
+        allow_var = False
         expr = parse_expression()
         consume(')')
         return expr
@@ -107,6 +110,8 @@ def parse(tokens: list[Token]) -> ast.Expression:
     def parse_block() -> ast.Expression:
         consume('{')
         arguments = []
+        nonlocal allow_var
+        allow_var = True
 
         if peek().text != '}':
             while True:
@@ -124,6 +129,8 @@ def parse(tokens: list[Token]) -> ast.Expression:
         return ast.Block(arguments)
 
     def parse_if_expression() -> ast.Expression:
+        nonlocal allow_var
+        allow_var = False
         consume('if')
         cond = parse_expression()
         consume('then')
@@ -136,6 +143,8 @@ def parse(tokens: list[Token]) -> ast.Expression:
         return ast.IfExpression(cond, then_clause, else_clause)
 
     def parse_while_expression() -> ast.Expression:
+        nonlocal allow_var
+        allow_var = False
         consume('while')
         cond = parse_expression()
         consume('do')
@@ -152,6 +161,8 @@ def parse(tokens: list[Token]) -> ast.Expression:
     def parse_function_call(name: str) -> ast.FunctionCall:
         consume('(')
         arguments = []
+        nonlocal allow_var
+        allow_var = False
 
         if peek().text != ')':
             while True:

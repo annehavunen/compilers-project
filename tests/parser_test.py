@@ -473,6 +473,89 @@ def test_parser() -> None:
         ]
     )
 
+    assert parse(tokenize("{{a} {b}}")) == ast.Block(
+        arguments=[
+            ast.Block(arguments=[ast.Identifier("a")]),
+            ast.Block(arguments=[ast.Identifier("b")])
+        ]
+    )
+
+    assert parse(tokenize("{if true then {a} b}")) == ast.Block(
+        arguments=[
+            ast.IfExpression(
+                cond=ast.Identifier("true"),
+                then_clause=ast.Block(arguments=[ast.Identifier("a")]),
+                else_clause=None
+            ), ast.Identifier("b")
+        ]
+    )
+
+    assert parse(tokenize("{if true then {a}; b}")) == ast.Block(
+        arguments=[
+            ast.IfExpression(
+                cond=ast.Identifier("true"),
+                then_clause=ast.Block(arguments=[ast.Identifier("a")]),
+                else_clause=None
+            ), ast.Identifier("b")
+        ]
+    )
+
+    assert parse(tokenize("{if true then {a} b; c}")) == ast.Block(
+        arguments=[
+            ast.IfExpression(
+                cond=ast.Identifier("true"),
+                then_clause=ast.Block(arguments=[ast.Identifier("a")]),
+                else_clause=None
+            ), ast.Identifier("b"),
+            ast.Identifier("c"),
+        ]
+    )
+
+    assert parse(tokenize("{if true then {a} else {b} c}")) == ast.Block(
+        arguments=[
+            ast.IfExpression(
+                cond=ast.Identifier("true"),
+                then_clause=ast.Block(arguments=[ast.Identifier("a")]),
+                else_clause=ast.Block(arguments=[ast.Identifier("b")])
+            ), ast.Identifier("c")
+        ]
+    )
+
+    assert parse(tokenize("x = { { f(a) } { b } }")) == ast.BinaryOp(
+        left=ast.Identifier("x"),
+        op="=",
+        right=ast.Block(
+            arguments=[ast.Block(
+                arguments=[ast.FunctionCall(
+                    name="f", arguments=[ast.Identifier("a")]
+                )]
+            ), ast.Block(
+                arguments=[ast.Identifier("b")]
+            )]
+        )
+    )
+
+    assert parse(tokenize("{while a do {b} c}")) == ast.Block(
+        arguments=[ast.WhileExpression(
+            cond=ast.Identifier("a"),
+            do_clause=ast.Block(arguments=[ast.Identifier("b")])
+        ), ast.Identifier("c")]
+    )
+
+    assert parse(tokenize("{var x = {a} b}")) == ast.Block(
+        arguments=[ast.VarDeclaration(name="x", value=ast.Block(
+            arguments=[ast.Identifier("a")]
+        )), ast.Identifier("b")]
+    )
+
+    assert parse(tokenize("{var x = if true then {a} b}")) == ast.Block(
+        arguments=[ast.VarDeclaration(name="x", value=ast.IfExpression(
+            cond=ast.Identifier("true"),
+            then_clause=ast.Block(arguments=[ast.Identifier("a")]),
+            else_clause=None
+        )), ast.Identifier("b")]
+    )
+
     assert parse(tokenize("if a then {var x = 1; var y = 2}")) == ast.IfExpression(
         cond=ast.Identifier("a"),
         then_clause=ast.Block(
@@ -527,6 +610,9 @@ def test_parser() -> None:
         parse(tokenize("{a b}"))
 
     with pytest.raises(Exception):
+        parse(tokenize("{a {b}}"))
+
+    with pytest.raises(Exception):
         parse(tokenize("if a then var x = 1"))
 
     with pytest.raises(Exception):
@@ -534,3 +620,6 @@ def test_parser() -> None:
 
     with pytest.raises(Exception):
         parse(tokenize("f(var x = 1)"))
+
+    with pytest.raises(Exception):
+        parse(tokenize("{if true then {a} b c}"))

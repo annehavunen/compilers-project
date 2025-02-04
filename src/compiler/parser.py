@@ -116,17 +116,40 @@ def parse(tokens: list[Token]) -> ast.Expression:
         if peek().text != '}':
             while True:
                 arguments.append(parse_expression())
+
                 if peek().text == '}':
                     break
-                if peek().text != ";":
-                    raise Exception(f'Unexpected "{peek().text}"')
-                consume(';')
-                if peek().text == '}':
-                    arguments.append(ast.Literal(value=None))
-                    break
+
+                elif peek().text == ';':
+                    consume(';')
+                    if peek().text == '}':
+                        arguments.append(ast.Literal(value=None))
+                        break
+
+                else:
+                    was_block = ends_with_block(arguments[-1])
+                    if not was_block:
+                        raise Exception(f'Unexpected "{peek().text}"')
 
         consume('}')
         return ast.Block(arguments)
+
+    def ends_with_block(expression: ast.Expression) -> bool:
+        if isinstance(expression, ast.Block):
+            return True
+
+        if isinstance(expression, ast.IfExpression):
+            if not expression.else_clause:
+                return ends_with_block(expression.then_clause)
+            return ends_with_block(expression.else_clause)
+
+        if isinstance(expression, ast.WhileExpression):
+            return ends_with_block(expression.do_clause)
+
+        if isinstance(expression, ast.VarDeclaration):
+            return ends_with_block(expression.value)
+
+        return False
 
     def parse_if_expression() -> ast.Expression:
         nonlocal allow_var

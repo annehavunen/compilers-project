@@ -26,7 +26,7 @@ def parse(tokens: list[Token]) -> ast.Expression:
         token = peek()
         if token.type == 'int_literal':
             consume()
-            return ast.Literal(value=int(token.text))
+            return ast.Literal(location=token.loc, value=int(token.text))
         else:
             raise Exception(f'{peek().loc}: excepted literal, found "{token.text}')
 
@@ -34,7 +34,7 @@ def parse(tokens: list[Token]) -> ast.Expression:
         token = peek()
         if token.type == 'identifier':
             consume()
-            return ast.Identifier(name=token.text)
+            return ast.Identifier(location=token.loc, name=token.text)
         else:
             raise Exception(f'{peek().loc}: excepted identifier, found "{token.text}') 
 
@@ -46,7 +46,7 @@ def parse(tokens: list[Token]) -> ast.Expression:
         while peek().text == '=':
             op_token = consume()
             right = parse_assignment()
-            return ast.BinaryOp(left=left, op=op_token.text, right=right)
+            return ast.BinaryOp(location=op_token.loc, left=left, op=op_token.text, right=right)
         return left
 
     left_associative_operators = [
@@ -67,14 +67,14 @@ def parse(tokens: list[Token]) -> ast.Expression:
             while peek().text in left_associative_operators[precedence_level]:
                 op_token = consume()
                 right = parse_left_associative_operator(precedence_level + 1)
-                left = ast.BinaryOp(left=left, op=op_token.text, right=right)
+                left = ast.BinaryOp(location=op_token.loc, left=left, op=op_token.text, right=right)
         return left
 
     def parse_unary() -> ast.Expression:
         while peek().text in ['-', 'not']:
             op_token = consume()
             exp = parse_unary()
-            return ast.UnaryOp(op=op_token.text, exp=exp)
+            return ast.UnaryOp(location=op_token.loc, op=op_token.text, exp=exp)
         return parse_factor()
 
     def parse_factor() -> ast.Expression:
@@ -93,7 +93,7 @@ def parse(tokens: list[Token]) -> ast.Expression:
         elif peek().type == 'identifier':
             identifier = parse_identifier()
             if peek().text == "(":
-                return parse_function_call(identifier.name)
+                return parse_function_call(identifier)
             else:
                 return identifier
         else:
@@ -108,7 +108,7 @@ def parse(tokens: list[Token]) -> ast.Expression:
         return expr
 
     def parse_block() -> ast.Expression:
-        consume('{')
+        token = consume('{')
         arguments = []
         nonlocal allow_var
         allow_var = True
@@ -121,9 +121,9 @@ def parse(tokens: list[Token]) -> ast.Expression:
                     break
 
                 elif peek().text == ';':
-                    consume(';')
+                    semicolon_token = consume(';')
                     if peek().text == '}':
-                        arguments.append(ast.Literal(value=None))
+                        arguments.append(ast.Literal(location=semicolon_token.loc, value=None))
                         break
 
                 else:
@@ -132,7 +132,7 @@ def parse(tokens: list[Token]) -> ast.Expression:
                         raise Exception(f'Unexpected "{peek().text}"')
 
         consume('}')
-        return ast.Block(arguments)
+        return ast.Block(location=token.loc, arguments=arguments)
 
     def ends_with_block(expression: ast.Expression) -> bool:
         if isinstance(expression, ast.Block):
@@ -154,7 +154,7 @@ def parse(tokens: list[Token]) -> ast.Expression:
     def parse_if_expression() -> ast.Expression:
         nonlocal allow_var
         allow_var = False
-        consume('if')
+        token = consume('if')
         cond = parse_expression()
         consume('then')
         then_clause = parse_expression()
@@ -163,25 +163,25 @@ def parse(tokens: list[Token]) -> ast.Expression:
             else_clause = parse_expression()
         else:
             else_clause = None
-        return ast.IfExpression(cond, then_clause, else_clause)
+        return ast.IfExpression(token.loc, cond, then_clause, else_clause)
 
     def parse_while_expression() -> ast.Expression:
         nonlocal allow_var
         allow_var = False
-        consume('while')
+        token = consume('while')
         cond = parse_expression()
         consume('do')
         do_clause = parse_expression()
-        return ast.WhileExpression(cond, do_clause)
+        return ast.WhileExpression(token.loc, cond, do_clause)
 
     def parse_var_declaration() -> ast.Expression:
-        consume('var')
+        token = consume('var')
         identifier = parse_identifier()
         consume('=')
         value = parse_expression()
-        return ast.VarDeclaration(identifier.name, value)
+        return ast.VarDeclaration(token.loc, identifier.name, value)
 
-    def parse_function_call(name: str) -> ast.FunctionCall:
+    def parse_function_call(identifier: ast.Identifier) -> ast.FunctionCall:
         consume('(')
         arguments = []
         nonlocal allow_var
@@ -195,7 +195,7 @@ def parse(tokens: list[Token]) -> ast.Expression:
                 consume(',')
 
         consume(')')
-        return ast.FunctionCall(name=name, arguments=arguments)
+        return ast.FunctionCall(location=identifier.location, name=identifier.name, arguments=arguments)
 
     result = parse_expression()
     if pos < len(tokens):

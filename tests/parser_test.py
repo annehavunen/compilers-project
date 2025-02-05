@@ -9,6 +9,10 @@ def test_parser() -> None:
 
     L = SourceLocation(file="arbitrary_file", line=-99, column=-99)
 
+    assert parse(tokenize("a")) == ast.Identifier(L, "a")
+
+    assert parse(tokenize("1")) == ast.Literal(L, 1)
+
     assert parse(tokenize("1 + 2")) == ast.BinaryOp(
         location=L,
         left=ast.Literal(L, 1),
@@ -738,10 +742,6 @@ def test_parser() -> None:
 def test_parser_location() -> None:
 
     L = SourceLocation(file="arbitrary_file", line=-99, column=-99)
-
-    assert parse(tokenize("a")) == ast.Identifier(L, "a")
-    assert parse(tokenize("1")) == ast.Literal(L, 1)
-
     loc1 = SourceLocation(file="other_file", line=0, column=0)
     loc2 = SourceLocation(file="other_file", line=1, column=2)
 

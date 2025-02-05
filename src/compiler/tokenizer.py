@@ -9,8 +9,18 @@ class SourceLocation:
     line: int
     column: int
 
-# for testing purposes
-L = SourceLocation(file="arbitrary_file", line=-99, column=-99)
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, SourceLocation):
+            return False
+        # Special location for testing
+        if (self.file == "arbitrary_file" and self.line == -99 and self.column == -99):
+            return True
+        if (other.file == "arbitrary_file" and other.line == -99 and other.column == -99):
+            return True
+        return (self.file == other.file and
+                self.line == other.line and
+                self.column == other.column)
+
 
 TokenType = Literal["int_literal", "identifier", "operator", "punctuation", "end"]
 
@@ -19,20 +29,7 @@ class Token:
     loc: SourceLocation
     type: TokenType
     text: str
-    
-    def __eq__(self, other: object) -> bool:
-        if self is other:
-            return True
 
-        if not isinstance(other, Token):
-            return False
-
-        if ((self.loc == other.loc or self.loc == L or other.loc == L) and
-            self.type == other.type and
-            self.text == other.text):            
-            return True
-
-        return False
 
 def tokenize(source_code: str, file_name: str = "file_name") -> list[Token]:
     whitespace_re = re.compile(r'\s+')

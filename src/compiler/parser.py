@@ -197,8 +197,14 @@ def parse(tokens: list[Token]) -> ast.Expression:
         consume(')')
         return ast.FunctionCall(location=identifier.location, name=identifier.name, arguments=arguments)
 
+    tokens.insert(0, Token(loc=tokens[0].loc, type='punctuation', text='{'))
+    tokens.append(Token(loc=tokens[-1].loc, type='punctuation', text='}'))
+
     result = parse_expression()
+
     if pos < len(tokens):
         raise Exception(f'{tokens[pos].loc}: unexpected "{tokens[pos].text}"')
 
+    if isinstance(result, ast.Block) and len(result.arguments) == 1:
+        return result.arguments[0]
     return result

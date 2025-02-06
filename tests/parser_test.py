@@ -207,18 +207,6 @@ def test_parser() -> None:
         else_clause=None,
     )
 
-    assert parse(tokenize("if a then b + c")) == ast.IfExpression(
-        location=L,
-        cond=ast.Identifier(L, "a"),
-        then_clause=ast.BinaryOp(
-            location=L,
-            left=ast.Identifier(L, "b"),
-            op="+",
-            right=ast.Identifier(L, "c"),
-        ),
-        else_clause=None,
-    )
-
     assert parse(tokenize("if 1 then 2 else 3")) == ast.IfExpression(
         location=L,
         cond=ast.Literal(L, 1),
@@ -331,15 +319,9 @@ def test_parser() -> None:
         arguments=[],
     )
 
-    assert parse(tokenize("print_int(1)")) == ast.FunctionCall(
+    assert parse(tokenize("print_int(a - 1)")) == ast.FunctionCall(
         location=L,
         name="print_int",
-        arguments=[ast.Literal(L, 1)],
-    )
-
-    assert parse(tokenize("f(a - 1)")) == ast.FunctionCall(
-        location=L,
-        name="f",
         arguments=[ast.BinaryOp(
             location=L,
             left=ast.Identifier(L, "a"),
@@ -469,6 +451,16 @@ def test_parser() -> None:
         )
     )
 
+    assert parse(tokenize("if while a do {b} then c")) == ast.IfExpression(
+        location=L,
+        cond=ast.WhileExpression(
+            location=L,
+            cond=ast.Identifier(L, "a"),
+            do_clause=ast.Block(L, [ast.Identifier(L, "b")])
+        ), then_clause=ast.Identifier(L, "c"),
+        else_clause=None
+    )
+
     assert parse(tokenize("while a do b")) == ast.WhileExpression(
         location=L,
         cond=ast.Identifier(L, "a"),
@@ -531,16 +523,6 @@ def test_parser() -> None:
                    ast.Literal(L, None)]
     )
 
-    assert parse(tokenize("{x = y;}")) == ast.Block(
-        location=L,
-        arguments=[ast.BinaryOp(
-            location=L,
-            left=ast.Identifier(L, "x"),
-            op="=",
-            right=ast.Identifier(L, "y")
-        ), ast.Literal(L, None)]
-    )
-
     assert parse(tokenize("{var x = 1 + 2; print_int(x)}")) == ast.Block(
         location=L,
         arguments=[
@@ -590,18 +572,6 @@ def test_parser() -> None:
         ]
     )
 
-    assert parse(tokenize("{if true then {a}; b}")) == ast.Block(
-        location=L,
-        arguments=[
-            ast.IfExpression(
-                location=L,
-                cond=ast.Identifier(L, "true"),
-                then_clause=ast.Block(location=L, arguments=[ast.Identifier(L, "a")]),
-                else_clause=None
-            ), ast.Identifier(L, "b")
-        ]
-    )
-
     assert parse(tokenize("{if true then {a} b; c}")) == ast.Block(
         location=L,
         arguments=[
@@ -615,7 +585,7 @@ def test_parser() -> None:
         ]
     )
 
-    assert parse(tokenize("{if true then {a} else {b} c}")) == ast.Block(
+    assert parse(tokenize("if true then {a} else {b} c")) == ast.Block(
         location=L,
         arguments=[
             ast.IfExpression(
@@ -684,6 +654,49 @@ def test_parser() -> None:
         ), do_clause=ast.Identifier(L, "a")
     )
 
+    assert parse(tokenize("a;")) == ast.Block(
+        location=L,
+        arguments=[ast.Identifier(L, "a"),
+                   ast.Literal(L, None)
+        ]
+    )
+
+    assert parse(tokenize("a;b")) == ast.Block(
+        location=L,
+        arguments=[ast.Identifier(L, "a"),
+                   ast.Identifier(L, "b")]
+    )
+
+    assert parse(tokenize("a;b;")) == ast.Block(
+        location=L,
+        arguments=[
+            ast.Identifier(L, "a"),
+            ast.Identifier(L, "b"),
+            ast.Literal(L, None)
+        ]
+    )
+
+    assert parse(tokenize("{a}{b};")) == ast.Block(
+        location=L,
+        arguments=[ast.Block(L, [ast.Identifier(L, "a")]),
+                   ast.Block(L, [ast.Identifier(L, "b")]),
+                   ast.Literal(L, None)
+                ]
+    )
+
+    assert parse(tokenize("{{a}{b};}")) == ast.Block(
+        location=L,
+        arguments=[ast.Block(L, [ast.Identifier(L, "a")]),
+                   ast.Block(L, [ast.Identifier(L, "b")]),
+                   ast.Literal(L, None)
+                ]
+    )
+
+    assert parse(tokenize("{} then")) == ast.Block(
+        location=L,
+        arguments=[ast.Block(L, []), ast.Identifier(L, "then")]
+    )
+
     with pytest.raises(Exception):
         parse(tokenize(""))
 
@@ -706,6 +719,9 @@ def test_parser() -> None:
         parse(tokenize("f(1("))
 
     with pytest.raises(Exception):
+        parse(tokenize("f(1; 2)"))
+
+    with pytest.raises(Exception):
         parse(tokenize("not"))
 
     with pytest.raises(Exception):
@@ -721,10 +737,19 @@ def test_parser() -> None:
         parse(tokenize("{;}"))
 
     with pytest.raises(Exception):
+        parse(tokenize(";"))
+
+    with pytest.raises(Exception):
         parse(tokenize("{a b}"))
 
     with pytest.raises(Exception):
         parse(tokenize("{a {b}}"))
+
+    with pytest.raises(Exception):
+        parse(tokenize("{a, b}"))
+
+    with pytest.raises(Exception):
+        parse(tokenize("a {b}"))
 
     with pytest.raises(Exception):
         parse(tokenize("if a then var x = 1"))

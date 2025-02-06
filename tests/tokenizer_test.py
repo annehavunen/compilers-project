@@ -94,9 +94,16 @@ def test_tokenizer_basics() -> None:
         Token(loc=L, type="int_literal", text='2'),
     ]
 
+    assert tokenize("true") == [
+        Token(loc=L, type="bool_literal", text="true")
+    ]
+
+    assert tokenize("false") == [
+        Token(loc=L, type="bool_literal", text="false")
+    ]
+
     with pytest.raises(Exception):
         tokenize("a@")
-
 
 def test_tokenizer_location() -> None:
 

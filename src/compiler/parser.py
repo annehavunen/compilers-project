@@ -27,6 +27,13 @@ def parse(tokens: list[Token]) -> ast.Expression:
         if token.type == 'int_literal':
             consume()
             return ast.Literal(location=token.loc, value=int(token.text))
+        elif token.type == 'bool_literal':
+            if token.text == 'true':
+                consume()
+                return ast.Literal(location=token.loc, value=True)
+            else:
+                consume()
+                return ast.Literal(location=token.loc, value=False)
         else:
             raise Exception(f'{peek().loc}: excepted literal, found "{token.text}')
 
@@ -88,7 +95,7 @@ def parse(tokens: list[Token]) -> ast.Expression:
             return parse_while_expression()
         elif peek().text == 'var' and allow_var:
             return parse_var_declaration()
-        elif peek().type == 'int_literal':
+        elif peek().type == 'int_literal' or peek().type == 'bool_literal':
             return parse_literal()
         elif peek().type == 'identifier':
             identifier = parse_identifier()

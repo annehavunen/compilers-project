@@ -565,19 +565,19 @@ def test_parser() -> None:
         arguments=[
             ast.IfExpression(
                 location=L,
-                cond=ast.Identifier(L, "true"),
+                cond=ast.Literal(L, True),
                 then_clause=ast.Block(location=L, arguments=[ast.Identifier(L, "a")]),
                 else_clause=None
             ), ast.Identifier(L, "b")
         ]
     )
 
-    assert parse(tokenize("{if true then {a} b; c}")) == ast.Block(
+    assert parse(tokenize("{if false then {a} b; c}")) == ast.Block(
         location=L,
         arguments=[
             ast.IfExpression(
                 location=L,
-                cond=ast.Identifier(L, "true"),
+                cond=ast.Literal(L, False),
                 then_clause=ast.Block(location=L, arguments=[ast.Identifier(L, "a")]),
                 else_clause=None
             ), ast.Identifier(L, "b"),
@@ -590,7 +590,7 @@ def test_parser() -> None:
         arguments=[
             ast.IfExpression(
                 location=L,
-                cond=ast.Identifier(L, "true"),
+                cond=ast.Literal(L, True),
                 then_clause=ast.Block(location=L, arguments=[ast.Identifier(L, "a")]),
                 else_clause=ast.Block(location=L, arguments=[ast.Identifier(L, "b")])
             ), ast.Identifier(L, "c")
@@ -630,7 +630,7 @@ def test_parser() -> None:
         location=L,
         arguments=[ast.VarDeclaration(location=L, name="x", value=ast.IfExpression(
             location=L,
-            cond=ast.Identifier(L, "true"),
+            cond=ast.Literal(L, True),
             then_clause=ast.Block(location=L, arguments=[ast.Identifier(L, "a")]),
             else_clause=None
         )), ast.Identifier(L, "b")]

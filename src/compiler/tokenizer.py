@@ -22,7 +22,7 @@ class SourceLocation:
                 self.column == other.column)
 
 
-TokenType = Literal["int_literal", "identifier", "operator", "punctuation", "end"]
+TokenType = Literal["int_literal", "bool_literal", "identifier", "operator", "punctuation", "end"]
 
 @dataclass(frozen=True)
 class Token:
@@ -80,7 +80,10 @@ def tokenize(source_code: str, file_name: str = "file_name") -> list[Token]:
 
         match = identifier_re.match(source_code, position)
         if match is not None:
-            append_token("identifier", source_code[position:match.end()])
+            if match.group() in ["true", "false"]:
+                append_token("bool_literal", source_code[position:match.end()])
+            else:
+                append_token("identifier", source_code[position:match.end()])
             continue
 
         match = integer_re.match(source_code, position)
@@ -98,6 +101,6 @@ def tokenize(source_code: str, file_name: str = "file_name") -> list[Token]:
             append_token("punctuation", source_code[position:match.end()])
             continue
         
-        raise Exception(f'Tokenization failed near {source_code[position:(position + 10)]}...')
+        raise Exception(f"Tokenization failed near {source_code[position:(position + 10)]}...")
 
     return result

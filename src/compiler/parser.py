@@ -204,6 +204,9 @@ def parse(tokens: list[Token]) -> ast.Expression:
         consume(')')
         return ast.FunctionCall(location=identifier.location, name=identifier.name, arguments=arguments)
 
+
+    if len(tokens) == 0:
+        raise Exception("Input was empty")
     tokens.insert(0, Token(loc=tokens[0].loc, type='punctuation', text='{'))
     tokens.append(Token(loc=tokens[-1].loc, type='punctuation', text='}'))
 

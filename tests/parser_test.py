@@ -646,13 +646,19 @@ def test_parser() -> None:
         ), else_clause=None
     )
 
-    assert parse(tokenize("while {var x = 1} do a")) == ast.WhileExpression(
+    assert parse(tokenize("while {var x = 1} do a; var y = 1")) == ast.Block(
         location=L,
-        cond=ast.Block(
+        arguments=[ast.WhileExpression(
             location=L,
-            arguments=[ast.VarDeclaration(location=L, name="x", value=ast.Literal(L, 1))]
-        ), do_clause=ast.Identifier(L, "a")
+            cond=ast.Block(
+                location=L,
+                arguments=[ast.VarDeclaration(location=L, name="x", value=ast.Literal(L, 1))]
+            ), do_clause=ast.Identifier(L, "a")
+        ), ast.VarDeclaration(L, "y", ast.Literal(L, 1))
+        ]
     )
+    
+
 
     assert parse(tokenize("a;")) == ast.Block(
         location=L,
@@ -695,6 +701,19 @@ def test_parser() -> None:
     assert parse(tokenize("{} then")) == ast.Block(
         location=L,
         arguments=[ast.Block(L, []), ast.Identifier(L, "then")]
+    )
+
+    assert parse(tokenize("var x = (1 + 2); var y = 1")) == ast.Block(
+        location=L,
+        arguments=[ast.VarDeclaration(
+            location=L,
+            name="x",
+            value=ast.BinaryOp(L, ast.Literal(L, 1), "+", ast.Literal(L, 2))
+        ), ast.VarDeclaration(
+            location=L,
+            name="y",
+            value=ast.Literal(L, 1)
+        )]
     )
 
     with pytest.raises(Exception):

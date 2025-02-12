@@ -112,6 +112,7 @@ def parse(tokens: list[Token]) -> ast.Expression:
         allow_var = False
         expr = parse_expression()
         consume(')')
+        allow_var = True
         return expr
 
     def parse_block() -> ast.Expression:
@@ -132,6 +133,7 @@ def parse(tokens: list[Token]) -> ast.Expression:
                     if peek().text == '}':
                         arguments.append(ast.Literal(location=semicolon_token.loc, value=None))
                         break
+                    continue
 
                 else:
                     was_block = ends_with_block(arguments[-1])
@@ -170,6 +172,7 @@ def parse(tokens: list[Token]) -> ast.Expression:
             else_clause = parse_expression()
         else:
             else_clause = None
+        allow_var = True
         return ast.IfExpression(token.loc, cond, then_clause, else_clause)
 
     def parse_while_expression() -> ast.Expression:
@@ -179,6 +182,7 @@ def parse(tokens: list[Token]) -> ast.Expression:
         cond = parse_expression()
         consume('do')
         do_clause = parse_expression()
+        allow_var = True
         return ast.WhileExpression(token.loc, cond, do_clause)
 
     def parse_var_declaration() -> ast.Expression:
@@ -202,6 +206,7 @@ def parse(tokens: list[Token]) -> ast.Expression:
                 consume(',')
 
         consume(')')
+        allow_var = True
         return ast.FunctionCall(location=identifier.location, name=identifier.name, arguments=arguments)
 
 

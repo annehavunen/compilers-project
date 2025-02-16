@@ -35,6 +35,9 @@ def test_interpreter() -> None:
     assert interpret(parse(tokenize('var right = true; false and {right = false; false}; right')), s) == True
     assert interpret(parse(tokenize('var right = false; true and {right = true; true}; right')), s) == True
     assert interpret(parse(tokenize('false or false')), s) == False
+    assert interpret(parse(tokenize('var i = 0; while i < 3 do i = i + 1; i')), s) == 3
+    assert interpret(parse(tokenize('var i = 0; while false do i = i + 1; i')), s) == 0
+    assert interpret(parse(tokenize('var i = 0; while i < 3 do i = i + 1')), s) == None
 
     s = build_toplevel_symtab()
     with pytest.raises(Exception):

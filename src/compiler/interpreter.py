@@ -159,13 +159,18 @@ def interpret(node: ast.Expression, symtab: SymTab) -> Value:
                     interpret(node.then_clause, symtab)
                 return None
 
+        case ast.WhileExpression():
+            while True:
+                cond_value = interpret(node.cond, symtab)
+                if not cond_value:
+                    return None
+                interpret(node.do_clause, symtab)
+
         case ast.Block():
             inner_scope = SymTab(parent=symtab)
             result = None
             for argument in node.arguments:
                 result = interpret(argument, inner_scope)
-            if isinstance(result, ast.Literal) and result.value is None:
-                return None
             return result
 
         case ast.FunctionCall():

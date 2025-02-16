@@ -44,6 +44,8 @@ def build_toplevel_symtab() -> SymTab:
     symtab.set('<=', less_than_or_equal)
     symtab.set('>', greater_than)
     symtab.set('>=', greater_than_or_equal)
+    symtab.set('and', op_and)
+    symtab.set('or', op_or)
     symtab.set('print_int', print_int)
     symtab.set('print_bool', print_bool)
     symtab.set('read_int', read_int)
@@ -76,6 +78,10 @@ def greater_than(a: int | bool, b: int | bool) -> bool:
     return a > b
 def greater_than_or_equal(a: int | bool, b: int | bool) -> bool:
     return a >= b
+def op_and(a: bool, b: bool) -> bool:
+    return a and b
+def op_or(a: bool, b: bool) -> bool:
+    return a or b
 def unary_minus(a: int) -> int:
     if type(a) != int:
         raise Exception(f'Value {a} was not integer')
@@ -117,6 +123,14 @@ def interpret(node: ast.Expression, symtab: SymTab) -> Value:
                 return value
 
             a: Any = interpret(node.left, symtab)
+            if node.op == "and":
+                if not a:
+                    return False
+
+            if node.op == "or":
+                if a:
+                    return True
+            
             b: Any = interpret(node.right, symtab)
             binaryop = symtab.get(node.op)
             return binaryop(a, b)

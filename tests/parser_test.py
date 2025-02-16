@@ -703,6 +703,29 @@ def test_parser() -> None:
         arguments=[ast.Block(L, []), ast.Identifier(L, "then")]
     )
 
+    assert parse(tokenize("a + {b} c")) == ast.Block(
+        location=L,
+        arguments=[
+            ast.BinaryOp(
+                location=L,
+                left=ast.Identifier(L, "a"),
+                op="+",
+                right=ast.Block(L, [ast.Identifier(L, "b")])
+            ), ast.Identifier(L, "c")
+        ]
+    )
+
+    assert parse(tokenize("not {a} b")) == ast.Block(
+        location=L,
+        arguments=[
+            ast.UnaryOp(
+                location=L,
+                op="not",
+                exp=ast.Block(L, [ast.Identifier(L, "a")])
+            ), ast.Identifier(L, "b")
+        ]
+    )
+
     assert parse(tokenize("var x = (1 + 2); var y = 1")) == ast.Block(
         location=L,
         arguments=[ast.VarDeclaration(
@@ -739,6 +762,9 @@ def test_parser() -> None:
 
     with pytest.raises(Exception):
         parse(tokenize("f(1; 2)"))
+
+    with pytest.raises(Exception):
+        parse(tokenize("f({a} b})"))
 
     with pytest.raises(Exception):
         parse(tokenize("not"))

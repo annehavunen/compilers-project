@@ -137,6 +137,7 @@ def parse(tokens: list[Token]) -> ast.Expression:
 
                 else:
                     was_block = ends_with_block(arguments[-1])
+                    print(arguments[-1])
                     if not was_block:
                         raise Exception(f'Unexpected "{peek().text}"')
 
@@ -157,6 +158,12 @@ def parse(tokens: list[Token]) -> ast.Expression:
 
         if isinstance(expression, ast.VarDeclaration):
             return ends_with_block(expression.value)
+
+        if isinstance(expression, ast.BinaryOp):
+            return ends_with_block(expression.right)
+
+        if isinstance(expression, ast.UnaryOp):
+            return ends_with_block(expression.exp)
 
         return False
 

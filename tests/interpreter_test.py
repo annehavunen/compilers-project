@@ -11,9 +11,10 @@ def test_interpreter() -> None:
     assert interpret(parse(tokenize('4 / -2')), s) == -2
     assert interpret(parse(tokenize('4 % 2')), s) == 0
     assert interpret(parse(tokenize('true == not false')), s) == True
+    assert interpret(parse(tokenize('true != false')), s) == True
     assert interpret(parse(tokenize('(1 + 1) >= 2')), s) == True
-    assert interpret(parse(tokenize('if 1 < 2 then 3 else 4')), s) == 3
-    assert interpret(parse(tokenize('if 2 < 1 then 3 else 4')), s) == 4
+    assert interpret(parse(tokenize('if 1 <= 2 then 3 else 4')), s) == 3
+    assert interpret(parse(tokenize('if 1 > 2 then 3 else 4')), s) == 4
     assert interpret(parse(tokenize('10 + if 2 < 1 then 3 else 4')), s) == 14
     assert interpret(parse(tokenize('if 1 < 2 then 3')), s) == None
     assert interpret(parse(tokenize('if 2 < 1 then 3')), s) == None

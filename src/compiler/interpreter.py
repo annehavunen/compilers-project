@@ -33,74 +33,29 @@ class SymTab:
 def build_toplevel_symtab() -> SymTab:
     symtab = SymTab()
 
-    symtab.set('+', add)
-    symtab.set('-', subtract)
-    symtab.set('*', multiply)
-    symtab.set('/', divide)
-    symtab.set('%', modulo)
-    symtab.set('==', equals)
-    symtab.set('!=', not_equals)
-    symtab.set('<', less_than)
-    symtab.set('<=', less_than_or_equal)
-    symtab.set('>', greater_than)
-    symtab.set('>=', greater_than_or_equal)
-    symtab.set('and', op_and)
-    symtab.set('or', op_or)
-    symtab.set('print_int', print_int)
-    symtab.set('print_bool', print_bool)
-    symtab.set('read_int', read_int)
-    symtab.set('unary_-', unary_minus)
-    symtab.set('unary_not', unary_not)
+    symtab.set('+', lambda a, b: a + b)
+    symtab.set('-', lambda a, b: a - b)
+    symtab.set('*', lambda a, b: a * b)
+    symtab.set('/', lambda a, b: a // b if b != 0 else zero_division_exception())
+    symtab.set('%', lambda a, b: a % b)
+    symtab.set('==', lambda a, b: a == b)
+    symtab.set('!=', lambda a, b: a != b)
+    symtab.set('<', lambda a, b: a < b)
+    symtab.set('<=', lambda a, b: a <= b)
+    symtab.set('>', lambda a, b: a > b)
+    symtab.set('>=', lambda a, b: a >= b)
+    symtab.set('and', lambda a, b: a and b)
+    symtab.set('or', lambda a, b: a or b)
+    symtab.set('unary_-', lambda a: -a)
+    symtab.set('unary_not', lambda a: not a)
+    symtab.set('read_int', lambda: int(input()))
+    symtab.set('print_int', lambda a: print(a))
+    symtab.set('print_bool', lambda a: print('true') if a else print('false'))
 
     return symtab
 
-def add(a: int, b: int) -> int:
-    return a + b
-def subtract(a: int, b: int) -> int:
-    return a - b
-def multiply(a: int, b: int) -> int:
-    return a * b
-def divide(a: int, b: int) -> int:
-    if b == 0:
-        raise Exception("Can't divide by zero")
-    return a // b
-def modulo(a: int, b: int) -> int:
-    return a % b
-def equals(a: int | bool | None, b: int | bool | None) -> bool:
-    return a == b
-def not_equals(a: int | bool | None, b: int | bool | None) -> bool:
-    return a != b
-def less_than(a: int | bool, b: int | bool) -> bool:
-    return a < b
-def less_than_or_equal(a: int | bool, b: int | bool) -> bool:
-    return a <= b
-def greater_than(a: int | bool, b: int | bool) -> bool:
-    return a > b
-def greater_than_or_equal(a: int | bool, b: int | bool) -> bool:
-    return a >= b
-def op_and(a: bool, b: bool) -> bool:
-    return a and b
-def op_or(a: bool, b: bool) -> bool:
-    return a or b
-def unary_minus(a: int) -> int:
-    if type(a) != int:
-        raise Exception(f'Value {a} was not integer')
-    return -1 * a
-def unary_not(a: bool) -> bool:
-    if type(a) != bool:
-        raise Exception(f'Value {a} was not boolean')
-    return not a
-def print_int(a: int) -> None:
-    print(a)
-    return None
-def print_bool(a: bool) -> None:
-    if a:
-        print('true')
-    else:
-        print('false')
-    return None
-def read_int() -> int:
-    return int(input())
+def zero_division_exception() -> None:
+    raise Exception("Can't divide by zero")
 
 Value = int | bool | None | Callable
 

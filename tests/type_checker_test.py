@@ -1,32 +1,44 @@
 
 from compiler.tokenizer import tokenize
 from compiler.parser import parse
-from compiler.type_checker import typecheck
+from compiler.type_checker import typecheck, build_type_symtab, TypeSymTab
 from compiler.types import Bool, Int, Unit
 
 
 def test_type_checker() -> None:
-    assert typecheck(parse(tokenize('1 + 2'))) == Int
-    assert typecheck(parse(tokenize('1 + 2 < 3'))) == Bool
-    assert typecheck(parse(tokenize('if 1 < 2 then 3'))) == Unit
-    assert typecheck(parse(tokenize('if 1 < 2 then 3 else 4'))) == Int
-    assert typecheck(parse(tokenize('if 1 < 2 then 3 < 4 else 4 < 5'))) == Bool
-    assert typecheck(parse(tokenize('print_int(1)'))) == Unit
-    assert typecheck(parse(tokenize('print_bool(false)'))) == Unit
-    assert typecheck(parse(tokenize('read_int()'))) == Int
+    t = build_type_symtab()
 
-    assert_fails_typecheck('(1 < 3) + 3')
-    assert_fails_typecheck('if 1 then 3 else 4')
-    assert_fails_typecheck('if 1 < 2 then 3 else 4 < 5')
-    assert_fails_typecheck('print_int(true)')
-    assert_fails_typecheck('print_bool(1)')
-    assert_fails_typecheck('read_int(1)')
+    assert typecheck(parse(tokenize('1 + 2')), t) == Int
+    assert typecheck(parse(tokenize('1 - 2')), t) == Int
+    assert typecheck(parse(tokenize('1 * 2')), t) == Int
+    assert typecheck(parse(tokenize('4 / 2')), t) == Int
+    assert typecheck(parse(tokenize('4 % 2')), t) == Int
+    assert typecheck(parse(tokenize('1 + 2 < 3')), t) == Bool
+    assert typecheck(parse(tokenize('2 > 3 + 1')), t) == Bool
+    assert typecheck(parse(tokenize('2 >= 3 or 1 <= 2')), t) == Bool
+    assert typecheck(parse(tokenize('true and false')), t) == Bool
+    assert typecheck(parse(tokenize('if 1 < 2 then 3')), t) == Unit
+    assert typecheck(parse(tokenize('if 1 < 2 then 3 else 4')), t) == Int
+    assert typecheck(parse(tokenize('if 1 < 2 then 3 < 4 else 4 < 5')), t) == Bool
+    assert typecheck(parse(tokenize('print_int(1)')), t) == Unit
+    assert typecheck(parse(tokenize('print_bool(false)')), t) == Unit
+    assert typecheck(parse(tokenize('read_int()')), t) == Int
 
-def assert_fails_typecheck(code: str) -> None:
+    assert_fails_typecheck('(1 < 3) + 3', t)
+    assert_fails_typecheck('true < 3', t)
+    assert_fails_typecheck('true and 3', t)
+    assert_fails_typecheck('1 or 3', t)
+    assert_fails_typecheck('if 1 then 3 else 4', t)
+    assert_fails_typecheck('if 1 < 2 then 3 else 4 < 5', t)
+    assert_fails_typecheck('print_int(true)', t)
+    assert_fails_typecheck('print_bool(1)', t)
+    assert_fails_typecheck('read_int(1)', t)
+
+def assert_fails_typecheck(code: str, t: TypeSymTab) -> None:
     expr = parse(tokenize(code))
     failed = False
     try:
-        typecheck(expr)
+        typecheck(expr, t)
     except Exception:
         failed = True
     assert failed, f"Type-checking succeeded for: {code}"

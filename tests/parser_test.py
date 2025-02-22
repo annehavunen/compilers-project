@@ -189,7 +189,7 @@ def test_parser() -> None:
             location=L,
             left=ast.Identifier(L, "y"),
             op="=",
-            right=ast.UnaryOp(L, op="-", exp=ast.Literal(L, 1))
+            right=ast.UnaryOp(L, op="-", expr=ast.Literal(L, 1))
         )
     )
 
@@ -404,7 +404,7 @@ def test_parser() -> None:
                 location=L,
                 left=ast.Identifier(L, "n"),
                 op="!=",
-                right=ast.UnaryOp(location=L, op="-", exp=ast.Literal(L, 2))
+                right=ast.UnaryOp(location=L, op="-", expr=ast.Literal(L, 2))
             )
         )]
     )
@@ -412,7 +412,7 @@ def test_parser() -> None:
     assert parse(tokenize("-1")) == ast.UnaryOp(
         location=L,
         op="-",
-        exp=ast.Literal(L, 1)
+        expr=ast.Literal(L, 1)
     )
 
     assert parse(tokenize("1 + -2")) == ast.BinaryOp(
@@ -422,17 +422,17 @@ def test_parser() -> None:
         right=ast.UnaryOp(
             location=L,
             op="-",
-            exp=ast.Literal(L, 2)
+            expr=ast.Literal(L, 2)
         )
     )
 
     assert parse(tokenize("not not x")) == ast.UnaryOp(
         location=L,
         op="not",
-        exp=ast.UnaryOp(
+        expr=ast.UnaryOp(
             location=L,
             op="not",
-            exp=ast.Identifier(L, "x")
+            expr=ast.Identifier(L, "x")
         )
     )
 
@@ -441,13 +441,13 @@ def test_parser() -> None:
         cond=ast.UnaryOp(
             location=L,
             op="not",
-            exp=ast.Identifier(L, "a")
+            expr=ast.Identifier(L, "a")
         ),
         then_clause=ast.Literal(L, 1),
         else_clause=ast.UnaryOp(
             location=L,
             op="-",
-            exp=ast.Literal(L, 2)
+            expr=ast.Literal(L, 2)
         )
     )
 
@@ -469,7 +469,7 @@ def test_parser() -> None:
 
     assert parse(tokenize("while not a do b")) == ast.WhileExpression(
         location=L,
-        cond=ast.UnaryOp(location=L, op="not", exp=ast.Identifier(L, "a")),
+        cond=ast.UnaryOp(location=L, op="not", expr=ast.Identifier(L, "a")),
         do_clause=ast.Identifier(L, "b")
     )
 
@@ -721,7 +721,7 @@ def test_parser() -> None:
             ast.UnaryOp(
                 location=L,
                 op="not",
-                exp=ast.Block(L, [ast.Identifier(L, "a")])
+                expr=ast.Block(L, [ast.Identifier(L, "a")])
             ), ast.Identifier(L, "b")
         ]
     )

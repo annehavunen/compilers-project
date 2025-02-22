@@ -25,11 +25,11 @@ class SymTab:
             return self.locals[name]
         return UNDEFINED
 
-    def find_context(self, name: str) -> Any:
+    def find_scope(self, name: str) -> Any:
         if name in self.locals:
             return self
         if self.parent:
-            return self.parent.find_context(name)
+            return self.parent.find_scope(name)
         return UNDEFINED
 
 def build_toplevel_symtab() -> SymTab:
@@ -73,10 +73,10 @@ def interpret(node: ast.Expression, symtab: SymTab) -> Value:
                     raise Exception('Left of assignment must be an identifier')
                 name = node.left.name
                 value = interpret(node.right, symtab)
-                context = symtab.find_context(name)
-                if context is UNDEFINED:
+                scope = symtab.find_scope(name)
+                if scope is UNDEFINED:
                     raise Exception(f'Variable "{name}" is not set')
-                context.set(name, value)
+                scope.set(name, value)
                 return value
 
             a: Any = interpret(node.left, symtab)

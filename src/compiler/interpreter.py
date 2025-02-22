@@ -3,6 +3,8 @@ from typing import Any, Optional, Callable
 from compiler import ast
 
 
+UNDEFINED = object()
+
 @dataclass
 class SymTab:
     locals: dict = field(default_factory=dict)
@@ -16,19 +18,19 @@ class SymTab:
             return self.locals[name]
         elif self.parent:
             return self.parent.get(name)
-        return None
-    
+        return UNDEFINED
+
     def get_local(self, name: str) -> Any:
         if name in self.locals:
             return self.locals[name]
-        return None
+        return UNDEFINED
 
-    def find_context(self, name: str) -> Optional['SymTab']:
+    def find_context(self, name: str) -> Any:
         if name in self.locals:
             return self
         if self.parent:
             return self.parent.find_context(name)
-        return None
+        return UNDEFINED
 
 def build_toplevel_symtab() -> SymTab:
     symtab = SymTab()
@@ -72,7 +74,7 @@ def interpret(node: ast.Expression, symtab: SymTab) -> Value:
                 name = node.left.name
                 value = interpret(node.right, symtab)
                 context = symtab.find_context(name)
-                if context is None:
+                if context is UNDEFINED:
                     raise Exception(f'Variable "{name}" is not set')
                 context.set(name, value)
                 return value
@@ -82,7 +84,7 @@ def interpret(node: ast.Expression, symtab: SymTab) -> Value:
                 if not a:
                     return False
 
-            if node.op == "or":
+            elif node.op == "or":
                 if a:
                     return True
             
@@ -91,7 +93,7 @@ def interpret(node: ast.Expression, symtab: SymTab) -> Value:
             return binaryop(a, b)
 
         case ast.VarDeclaration():
-            if symtab.get_local(node.name) is not None:
+            if symtab.get_local(node.name) is not UNDEFINED:
                 raise Exception(f'Value for "{node.name}" already exists')
             value = interpret(node.value, symtab)
             symtab.set(node.name, value)
@@ -99,7 +101,7 @@ def interpret(node: ast.Expression, symtab: SymTab) -> Value:
 
         case ast.Identifier():
             value = symtab.get(node.name)
-            if value is None:
+            if value is UNDEFINED:
                 raise Exception(f'Variable "{node.name}" is not set')
             return value
 

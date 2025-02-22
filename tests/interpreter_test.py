@@ -30,7 +30,10 @@ def test_interpreter() -> None:
     assert interpret(parse(tokenize('var x = 1; {x = 2}; x')), s) == 2
     assert interpret(parse(tokenize('var x = 1; x = 2; x')), s) == 2
     assert interpret(parse(tokenize('var x = 1; {var x = 2}; x')), s) == 1
+    assert interpret(parse(tokenize('var x = {var y = 1; y}; x')), s) == 1
     assert interpret(parse(tokenize('var x = (1 + 2); var y = x; y')), s) == 3
+    assert interpret(parse(tokenize('var x = {} x')), s) == None
+    assert interpret(parse(tokenize('var x = if true then 2 else 3; x')), s) == 2
     assert interpret(parse(tokenize('var right = false; true or {right = true; true}; right')), s) == False
     assert interpret(parse(tokenize('var right = false; false or {right = true; true}; right')), s) == True
     assert interpret(parse(tokenize('var right = true; false and {right = false; false}; right')), s) == True
@@ -45,6 +48,9 @@ def test_interpreter() -> None:
         interpret(parse(tokenize('var x = 1; var x = 2')), s)
     s = build_toplevel_symtab()
     with pytest.raises(Exception):
+        interpret(parse(tokenize('var x = if true then 1; var x = 2')), s)
+    s = build_toplevel_symtab()
+    with pytest.raises(Exception):
         interpret(parse(tokenize('x')), s)
     s = build_toplevel_symtab()
     with pytest.raises(Exception):
@@ -52,5 +58,6 @@ def test_interpreter() -> None:
     s = build_toplevel_symtab()
     with pytest.raises(Exception):
         interpret(parse(tokenize('{{var x = 1}; x}')), s)
+    s = build_toplevel_symtab()
     with pytest.raises(Exception):
         interpret(parse(tokenize('{var x = 1}{x}')), s)

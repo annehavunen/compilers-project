@@ -53,7 +53,7 @@ class Block(Expression):
 @dataclass
 class UnaryOp(Expression):
     op: str
-    exp: Expression
+    expr: Expression
 
 
 @dataclass

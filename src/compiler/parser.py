@@ -80,8 +80,8 @@ def parse(tokens: list[Token]) -> ast.Expression:
     def parse_unary() -> ast.Expression:
         while peek().text in ['-', 'not']:
             op_token = consume()
-            exp = parse_unary()
-            return ast.UnaryOp(location=op_token.loc, op=op_token.text, exp=exp)
+            expr = parse_unary()
+            return ast.UnaryOp(location=op_token.loc, op=op_token.text, expr=expr)
         return parse_factor()
 
     def parse_factor() -> ast.Expression:
@@ -163,7 +163,7 @@ def parse(tokens: list[Token]) -> ast.Expression:
             return ends_with_block(expression.right)
 
         if isinstance(expression, ast.UnaryOp):
-            return ends_with_block(expression.exp)
+            return ends_with_block(expression.expr)
 
         return False
 

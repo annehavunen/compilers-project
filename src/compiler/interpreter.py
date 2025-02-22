@@ -142,7 +142,7 @@ def interpret(node: ast.Expression, symtab: SymTab) -> Value:
             return func(*args)
 
         case ast.UnaryOp():
-            value = interpret(node.exp, symtab)
+            value = interpret(node.expr, symtab)
             unaryop = symtab.get(f'unary_{node.op}')
             return unaryop(value)
 

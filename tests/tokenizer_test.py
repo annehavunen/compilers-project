@@ -102,6 +102,15 @@ def test_tokenizer_basics() -> None:
         Token(loc=L, type="bool_literal", text="false")
     ]
 
+    assert tokenize("var x: Int = 1") == [
+        Token(loc=L, type="identifier", text="var"),
+        Token(loc=L, type="identifier", text="x"),
+        Token(loc=L, type="punctuation", text=":"),
+        Token(loc=L, type="identifier", text="Int"),
+        Token(loc=L, type="operator", text="="),
+        Token(loc=L, type="int_literal", text="1"),
+    ]
+
     with pytest.raises(Exception):
         tokenize("a@")
 

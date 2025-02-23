@@ -195,9 +195,14 @@ def parse(tokens: list[Token]) -> ast.Expression:
     def parse_var_declaration() -> ast.Expression:
         token = consume('var')
         identifier = parse_identifier()
+        declaration = None
+        if peek().text == ':':
+            consume(':')
+            type = parse_identifier()
+            declaration = type.name
         consume('=')
         value = parse_expression()
-        return ast.VarDeclaration(token.loc, identifier.name, value)
+        return ast.VarDeclaration(token.loc, declaration, identifier.name, value)
 
     def parse_function_call(identifier: ast.Identifier) -> ast.FunctionCall:
         consume('(')

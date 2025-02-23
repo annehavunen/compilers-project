@@ -485,12 +485,14 @@ def test_parser() -> None:
 
     assert parse(tokenize("var a = 1")) == ast.VarDeclaration(
         location=L,
+        declared_type=None,
         name="a",
         value=ast.Literal(L, 1)
     )
 
     assert parse(tokenize("var x = if a then b")) == ast.VarDeclaration(
         location=L,
+        declared_type=None,
         name="x",
         value=ast.IfExpression(
             location=L,
@@ -498,6 +500,13 @@ def test_parser() -> None:
             then_clause=ast.Identifier(L, "b"),
             else_clause=None
         )
+    )
+
+    assert parse(tokenize("var a: some_identifier = 1 + 2")) == ast.VarDeclaration(
+        location=L,
+        declared_type="some_identifier",
+        name="a",
+        value=ast.BinaryOp(L, ast.Literal(L, 1), "+", ast.Literal(L, 2))
     )
 
     assert parse(tokenize("{}")) == ast.Block(
@@ -523,11 +532,12 @@ def test_parser() -> None:
                    ast.Literal(L, None)]
     )
 
-    assert parse(tokenize("{var x = 1 + 2; print_int(x)}")) == ast.Block(
+    assert parse(tokenize("{var x: Int = 1 + 2; print_int(x)}")) == ast.Block(
         location=L,
         arguments=[
             ast.VarDeclaration(
                 location=L,
+                declared_type="Int",
                 name="x",
                 value=ast.BinaryOp(
                     location=L,
@@ -621,19 +631,29 @@ def test_parser() -> None:
 
     assert parse(tokenize("{var x = {a} b}")) == ast.Block(
         location=L,
-        arguments=[ast.VarDeclaration(location=L, name="x", value=ast.Block(
-            location=L, arguments=[ast.Identifier(L, "a")]
-        )), ast.Identifier(L, "b")]
+        arguments=[ast.VarDeclaration(
+            location=L,
+            declared_type=None,
+            name="x",
+            value=ast.Block(L, [ast.Identifier(L, "a")])
+            ),
+        ast.Identifier(L, "b")]
     )
 
     assert parse(tokenize("{var x = if true then {a} b}")) == ast.Block(
         location=L,
-        arguments=[ast.VarDeclaration(location=L, name="x", value=ast.IfExpression(
-            location=L,
-            cond=ast.Literal(L, True),
-            then_clause=ast.Block(location=L, arguments=[ast.Identifier(L, "a")]),
-            else_clause=None
-        )), ast.Identifier(L, "b")]
+        arguments=[ast.VarDeclaration(
+                location=L, 
+                declared_type=None,
+                name="x", 
+                value=ast.IfExpression(
+                    location=L,
+                    cond=ast.Literal(L, True),
+                    then_clause=ast.Block(location=L, arguments=[ast.Identifier(L, "a")]),
+                    else_clause=None
+                ),
+            ), ast.Identifier(L, "b")
+        ]
     )
 
     assert parse(tokenize("if a then {var x = 1; var y = 2}")) == ast.IfExpression(
@@ -641,8 +661,8 @@ def test_parser() -> None:
         cond=ast.Identifier(L, "a"),
         then_clause=ast.Block(
             location=L,
-            arguments=[ast.VarDeclaration(location=L, name="x", value=ast.Literal(L, 1)),
-                       ast.VarDeclaration(location=L, name="y", value=ast.Literal(L, 2))]
+            arguments=[ast.VarDeclaration(L, None, "x", ast.Literal(L, 1)),
+                       ast.VarDeclaration(L, None, "y", ast.Literal(L, 2))]
         ), else_clause=None
     )
 
@@ -652,13 +672,11 @@ def test_parser() -> None:
             location=L,
             cond=ast.Block(
                 location=L,
-                arguments=[ast.VarDeclaration(location=L, name="x", value=ast.Literal(L, 1))]
+                arguments=[ast.VarDeclaration(L, None, "x", ast.Literal(L, 1))]
             ), do_clause=ast.Identifier(L, "a")
-        ), ast.VarDeclaration(L, "y", ast.Literal(L, 1))
+        ), ast.VarDeclaration(L, None, "y", ast.Literal(L, 1))
         ]
     )
-    
-
 
     assert parse(tokenize("a;")) == ast.Block(
         location=L,
@@ -730,10 +748,12 @@ def test_parser() -> None:
         location=L,
         arguments=[ast.VarDeclaration(
             location=L,
+            declared_type=None,
             name="x",
             value=ast.BinaryOp(L, ast.Literal(L, 1), "+", ast.Literal(L, 2))
         ), ast.VarDeclaration(
             location=L,
+            declared_type=None,
             name="y",
             value=ast.Literal(L, 1)
         )]
@@ -774,6 +794,15 @@ def test_parser() -> None:
 
     with pytest.raises(Exception):
         parse(tokenize("var a"))
+
+    with pytest.raises(Exception):
+        parse(tokenize("var a: 1 = 2"))
+
+    with pytest.raises(Exception):
+        parse(tokenize("var a: = 2"))
+
+    with pytest.raises(Exception):
+        parse(tokenize("var a: 2"))
 
     with pytest.raises(Exception):
         parse(tokenize("{a, b}"))
@@ -843,7 +872,7 @@ def test_parser_location() -> None:
         location=loc1,
         cond=ast.Block(
             location=loc2,
-            arguments=[ast.VarDeclaration(location=loc3, name="x", value=ast.Literal(loc4, 1))]
+            arguments=[ast.VarDeclaration(loc3, None, "x", ast.Literal(loc4, 1))]
         ), do_clause=ast.Identifier(loc5, "a")
     )
 

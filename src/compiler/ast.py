@@ -58,5 +58,6 @@ class UnaryOp(Expression):
 
 @dataclass
 class VarDeclaration(Expression):
+    declared_type: str | None
     name: str
     value: Expression

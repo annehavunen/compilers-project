@@ -108,8 +108,17 @@ def typecheck(node: ast.Expression, symtab: TypeSymTab) -> Type:
         case ast.VarDeclaration():
             if symtab.get_local(node.name) is not UNDEFINED:
                 raise Exception(f"Value for '{node.name}' already exists")
-            type = typecheck(node.value, symtab)
-            symtab.set(node.name, type)
+
+            actual_type = typecheck(node.value, symtab)
+            if node.declared_type is not None:
+                types = {'Int': Int, 'Bool': Bool, 'Unit': Unit}
+                declared_type = types.get(node.declared_type)
+                if declared_type is None:
+                    raise Exception(f"Unknown declaration type '{node.declared_type}' to '{node.name}'")
+                if actual_type != declared_type:
+                    raise Exception(f"Declared '{node.name}' as type '{declared_type}' but it was '{actual_type}'")
+
+            symtab.set(node.name, actual_type)
             return Unit
 
         case ast.Identifier():

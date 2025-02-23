@@ -45,6 +45,12 @@ def test_type_checker() -> None:
     assert typecheck(parse(tokenize('var x = {}; x = if true then 2')), t) == Unit
     assert typecheck(parse(tokenize('var y = while true do y + 1; y')), t) == Unit
     assert typecheck(parse(tokenize('while {var z = 1 > 2; z} do 1')), t) == Unit
+    t = build_type_symtab()
+    assert typecheck(parse(tokenize('var a: Int = 2; a')), t) == Int
+    assert typecheck(parse(tokenize('var b: Bool = false; b')), t) == Bool
+    assert typecheck(parse(tokenize('var c: Unit = if true then 2; c')), t) == Unit
+    assert typecheck(parse(tokenize('var x: Int = 1 + 1; var y = x = 3; x')), t) == Int
+
 
     t = build_type_symtab()
     assert_fails_typecheck('(1 < 3) + 3', t)
@@ -65,6 +71,10 @@ def test_type_checker() -> None:
     assert_fails_typecheck('z = 2', t)
     assert_fails_typecheck('1 = 2', t)
     assert_fails_typecheck('while 2 do 1', t)
+    assert_fails_typecheck('var a: Bool = 2', t)
+    assert_fails_typecheck('var b: bool = true', t)
+    assert_fails_typecheck('var c: something = 1', t)
+    assert_fails_typecheck('var x: Int = 2; var y = x = true', t)
 
 def assert_fails_typecheck(code: str, t: TypeSymTab) -> None:
     expr = parse(tokenize(code))

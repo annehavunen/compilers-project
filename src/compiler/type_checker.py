@@ -1,63 +1,11 @@
 
 from compiler import ast
-from compiler.types import Bool, FunType, Int, Type, Unit
-from dataclasses import dataclass, field
-from typing import Optional, Any
+from compiler.symtab import SymTab, UNDEFINED
+from compiler.types import Bool, Int, Unit, Type
+from typing import Any
 
 
-UNDEFINED = object()
-
-@dataclass
-class TypeSymTab:
-    locals: dict = field(default_factory=dict)
-    parent: Optional['TypeSymTab'] = None
-
-    def set(self, name: str, type: Type) -> None:
-        self.locals[name] = type
-
-    def get(self, name: str) -> Any:
-        if name in self.locals:
-            return self.locals[name]
-        elif self.parent:
-            return self.parent.get(name)
-        return UNDEFINED
-
-    def get_local(self, name: str) -> Any:
-        if name in self.locals:
-            return self.locals[name]
-        return UNDEFINED
-
-    def find_scope(self, name: str) -> Any:
-        if name in self.locals:
-            return self
-        if self.parent:
-            return self.parent.find_scope(name)
-        return UNDEFINED
-
-def build_type_symtab() -> TypeSymTab:
-    symtab = TypeSymTab()
-
-    symtab.set('+', FunType([Int, Int], Int))
-    symtab.set('-', FunType([Int, Int], Int))
-    symtab.set('*', FunType([Int, Int], Int))
-    symtab.set('/', FunType([Int, Int], Int))
-    symtab.set('%', FunType([Int, Int], Int))
-    symtab.set('<', FunType([Int, Int], Bool))
-    symtab.set('<=', FunType([Int, Int], Bool))
-    symtab.set('>', FunType([Int, Int], Bool))
-    symtab.set('>=', FunType([Int, Int], Bool))
-    symtab.set('and', FunType([Bool, Bool], Bool))
-    symtab.set('or', FunType([Bool, Bool], Bool))
-    symtab.set('unary_-', FunType([Int], Int))
-    symtab.set('unary_not', FunType([Bool], Bool))
-    symtab.set('print_int', FunType([Int], Unit))
-    symtab.set('print_bool', FunType([Bool], Unit))
-    symtab.set('read_int', FunType([], Int))
-
-    return symtab
-
-
-def typecheck(node: ast.Expression, symtab: TypeSymTab) -> Type:
+def typecheck(node: ast.Expression, symtab: SymTab) -> Type:
 
     def check(node: ast.Expression) -> Type:
         match node:
@@ -130,7 +78,7 @@ def typecheck(node: ast.Expression, symtab: TypeSymTab) -> Type:
                 return type
 
             case ast.Block():
-                inner_scope = TypeSymTab(parent=symtab)
+                inner_scope = SymTab(parent=symtab)
                 return_type: Any = Unit
                 for argument in node.arguments:
                     return_type = typecheck(argument, inner_scope)

@@ -1,11 +1,12 @@
 import pytest
-from compiler.interpreter import interpret, build_toplevel_symtab
-from compiler.parser import parse
 from compiler.tokenizer import tokenize
+from compiler.parser import parse
+from compiler.interpreter import interpret
+from compiler.symtab import build_interpreter_symtab
 
 
 def test_interpreter() -> None:
-    s = build_toplevel_symtab()
+    s = build_interpreter_symtab()
     assert interpret(parse(tokenize('1 + 2')), s) == 3
     assert interpret(parse(tokenize('1 + 2 * 3')), s) == 7
     assert interpret(parse(tokenize('4 / -2')), s) == -2
@@ -43,21 +44,16 @@ def test_interpreter() -> None:
     assert interpret(parse(tokenize('var i = 0; while false do i = i + 1; i')), s) == 0
     assert interpret(parse(tokenize('var i = 0; while i < 3 do i = i + 1')), s) == None
 
-    s = build_toplevel_symtab()
+    s = build_interpreter_symtab()
     with pytest.raises(Exception):
         interpret(parse(tokenize('var x = 1; var x = 2')), s)
-    s = build_toplevel_symtab()
     with pytest.raises(Exception):
-        interpret(parse(tokenize('var x = if true then 1; var x = 2')), s)
-    s = build_toplevel_symtab()
+        interpret(parse(tokenize('var y = if true then 1; var y = 2')), s)
     with pytest.raises(Exception):
-        interpret(parse(tokenize('x')), s)
-    s = build_toplevel_symtab()
+        interpret(parse(tokenize('z')), s)
     with pytest.raises(Exception):
-        interpret(parse(tokenize('{var x = 1}; x')), s)
-    s = build_toplevel_symtab()
+        interpret(parse(tokenize('{var a = 1}; a')), s)
     with pytest.raises(Exception):
-        interpret(parse(tokenize('{{var x = 1}; x}')), s)
-    s = build_toplevel_symtab()
+        interpret(parse(tokenize('{{var b = 1}; b}')), s)
     with pytest.raises(Exception):
-        interpret(parse(tokenize('{var x = 1}{x}')), s)
+        interpret(parse(tokenize('{var c = 1}{c}')), s)

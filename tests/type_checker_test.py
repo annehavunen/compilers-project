@@ -1,7 +1,8 @@
 
 from compiler.tokenizer import tokenize
 from compiler.parser import parse
-from compiler.type_checker import typecheck, build_type_symtab, TypeSymTab
+from compiler.type_checker import typecheck
+from compiler.symtab import build_type_symtab, SymTab
 from compiler.types import Bool, Int, Unit
 
 
@@ -84,7 +85,7 @@ def test_type_checker() -> None:
     assert_fails_typecheck('var c: something = 1', t)
     assert_fails_typecheck('var x: Int = 2; var y = x = true', t)
 
-def assert_fails_typecheck(code: str, t: TypeSymTab) -> None:
+def assert_fails_typecheck(code: str, t: SymTab) -> None:
     expr = parse(tokenize(code))
     failed = False
     try:

@@ -156,6 +156,8 @@ def typecheck(node: ast.Expression, symtab: TypeSymTab) -> Type:
 
             case ast.FunctionCall():
                 func = symtab.get(node.name)
+                if func is UNDEFINED:
+                    raise Exception(f"Function '{node.name}' is not defined")
                 expected_args = func.arg_types
                 given_args = [typecheck(arg, symtab) for arg in node.arguments]
                 if expected_args != given_args:

@@ -21,8 +21,8 @@ def test_type_checker() -> None:
     assert typecheck(parse(tokenize('1 + if 1 < 2 then 3 else 4')), t) == Int
     assert typecheck(parse(tokenize('if 1 < 2 then 3 < 4 else 4 < 5')), t) == Bool
     assert typecheck(parse(tokenize('1 + if 1 < 2 then 3 else 4')), t) == Int
-    assert typecheck(parse(tokenize('print_int(1)')), t) == Unit
-    assert typecheck(parse(tokenize('print_bool(false)')), t) == Unit
+    assert typecheck(parse(tokenize('print_int(1 * 2)')), t) == Unit
+    assert typecheck(parse(tokenize('print_bool(3 == 1)')), t) == Unit
     assert typecheck(parse(tokenize('read_int()')), t) == Int
     assert typecheck(parse(tokenize('var x = 1')), t) == Unit
     assert typecheck(parse(tokenize('var y = -1 + 2')), t) == Unit
@@ -51,6 +51,14 @@ def test_type_checker() -> None:
     assert typecheck(parse(tokenize('var c: Unit = if true then 2; c')), t) == Unit
     assert typecheck(parse(tokenize('var x: Int = 1 + 1; var y = x = 3; x')), t) == Int
 
+    expr = parse(tokenize('1 + 2'))
+    assert expr.type == Unit
+    assert typecheck(expr, t) == Int
+    assert expr.type == Int
+
+    expr = parse(tokenize('var z: Bool = 2 != 3'))
+    assert typecheck(expr, t) == Unit
+    assert expr.type == Unit
 
     t = build_type_symtab()
     assert_fails_typecheck('(1 < 3) + 3', t)

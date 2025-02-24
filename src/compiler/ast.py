@@ -1,12 +1,14 @@
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from compiler.tokenizer import SourceLocation
+from compiler.types import Type, Unit
 
 
 @dataclass
 class Expression:
     """Base class for AST nodes representing expressions"""
     location: SourceLocation
+    type: Type = field(kw_only=True, default=Unit)
 
 
 @dataclass

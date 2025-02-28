@@ -2,6 +2,7 @@
 from dataclasses import dataclass, field
 from typing import Any, Optional
 from compiler.types import Bool, Int, Unit, FunType
+from compiler.ir import IRVar
 
 
 UNDEFINED = object()
@@ -81,3 +82,12 @@ def build_type_symtab() -> SymTab:
     symtab.set('read_int', FunType([], Int))
 
     return symtab
+
+def build_ir_dict() -> dict:
+    symtab = build_type_symtab()
+    ir_dict = {}
+
+    for key, value in symtab.locals.items():
+        ir_dict[IRVar(key)] = value
+
+    return ir_dict

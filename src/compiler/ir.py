@@ -42,6 +42,10 @@ class LoadIntConstant(Instruction):
     value: int
     dest: IRVar
 
+@dataclass(frozen=True)
+class LoadBoolConstant(Instruction):
+    value: bool
+    dest: IRVar
 
 @dataclass(frozen=True)
 class Copy(Instruction):

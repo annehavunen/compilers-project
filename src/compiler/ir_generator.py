@@ -13,9 +13,10 @@ def generate_ir(root_types: dict[IRVar, Type], root_node: ast.Expression) -> lis
     next_var_number = 1
     next_label_number = 1
 
-    def new_var() -> IRVar:
+    def new_var(t: Type) -> IRVar:
         nonlocal next_var_number
         var = IRVar(f'x{next_var_number}')
+        var_types[var] = t
         next_var_number += 1
         return var
 
@@ -34,12 +35,13 @@ def generate_ir(root_types: dict[IRVar, Type], root_node: ast.Expression) -> lis
             case ast.Literal():
                 match node.value:
                     case bool():
-                        ...
+                        var = new_var(Bool)
+                        instructions.append(ir.LoadBoolConstant(node.value, var))
                     case int():
-                        var = new_var()
+                        var = new_var(Int)
                         instructions.append(ir.LoadIntConstant(node.value, var))
                     case None:
-                        ...
+                        var = var_unit
                     case _:
                         raise Exception(f"{loc}: unsupported literal: {type(node.value)}")
                 return var
@@ -48,7 +50,7 @@ def generate_ir(root_types: dict[IRVar, Type], root_node: ast.Expression) -> lis
                 var_op = st.get(node.op)
                 var_left = visit(st, node.left)
                 var_right = visit(st, node.right)
-                var_result = new_var()
+                var_result = new_var(node.type)
                 instructions.append(ir.Call(
                     fun=var_op,
                     args=[var_left, var_right],
@@ -58,7 +60,17 @@ def generate_ir(root_types: dict[IRVar, Type], root_node: ast.Expression) -> lis
 
             case ast.IfExpression():
                 if node.else_clause is None:
-                    raise Exception("TODO: if without else")
+                    l_then = new_label()
+                    l_end = new_label()
+
+                    var_cond = visit(st, node.cond)
+                    instructions.append(ir.CondJump(var_cond, l_then, l_end))
+
+                    instructions.append(l_then)
+                    visit(st, node.then_clause)
+
+                    instructions.append(l_end)
+                    return var_unit
                 else:
                     l_then = new_label()
                     l_else = new_label()
@@ -87,11 +99,17 @@ def generate_ir(root_types: dict[IRVar, Type], root_node: ast.Expression) -> lis
 
     var_result = visit(root_symtab, root_node)
 
-    # TODO: handle boolean and unit results
-    instructions.append(ir.Call(
-        IRVar('print_int'),
-        [var_result],
-        new_var()
-    ))
+    if var_types[var_result] == Int:
+        instructions.append(ir.Call(
+            IRVar('print_int'),
+            [var_result],
+            new_var(Int)
+        ))
+    elif var_types[var_result] == Bool:
+        instructions.append(ir.Call(
+            IRVar('print_bool'),
+            [var_result],
+            new_var(Bool)
+        ))
 
     return instructions

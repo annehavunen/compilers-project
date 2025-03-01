@@ -2,6 +2,7 @@
 from typing import Any
 from dataclasses import dataclass
 import dataclasses
+from compiler.tokenizer import SourceLocation
 
 
 @dataclass(frozen=True)
@@ -12,8 +13,9 @@ class IRVar:
         return self.name
 
 @dataclass(frozen=True)
-class Instruction:
+class Instruction():
     """Base class for IR instructions"""
+    location: SourceLocation
 
     def __str__(self) -> str:
         """Returns a string representation similar to

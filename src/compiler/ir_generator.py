@@ -1,5 +1,6 @@
 
 from compiler import ast, ir
+from compiler.tokenizer import SourceLocation
 from compiler.ir import IRVar
 from compiler.types import Bool, Int, Unit, Type
 from compiler.symtab import SymTab
@@ -20,9 +21,9 @@ def generate_ir(root_types: dict[IRVar, Type], root_node: ast.Expression) -> lis
         next_var_number += 1
         return var
 
-    def new_label() -> ir.Label:
+    def new_label(loc: SourceLocation) -> ir.Label:
         nonlocal next_label_number
-        label = ir.Label(f'L{next_label_number}')
+        label = ir.Label(loc, f'L{next_label_number}')
         next_label_number += 1
         return label
 
@@ -36,10 +37,10 @@ def generate_ir(root_types: dict[IRVar, Type], root_node: ast.Expression) -> lis
                 match node.value:
                     case bool():
                         var = new_var(Bool)
-                        instructions.append(ir.LoadBoolConstant(node.value, var))
+                        instructions.append(ir.LoadBoolConstant(loc, node.value, var))
                     case int():
                         var = new_var(Int)
-                        instructions.append(ir.LoadIntConstant(node.value, var))
+                        instructions.append(ir.LoadIntConstant(loc, node.value, var))
                     case None:
                         var = var_unit
                     case _:
@@ -52,6 +53,7 @@ def generate_ir(root_types: dict[IRVar, Type], root_node: ast.Expression) -> lis
                 var_right = visit(st, node.right)
                 var_result = new_var(node.type)
                 instructions.append(ir.Call(
+                    location=loc,
                     fun=var_op,
                     args=[var_left, var_right],
                     dest=var_result
@@ -60,11 +62,11 @@ def generate_ir(root_types: dict[IRVar, Type], root_node: ast.Expression) -> lis
 
             case ast.IfExpression():
                 if node.else_clause is None:
-                    l_then = new_label()
-                    l_end = new_label()
+                    l_then = new_label(loc)
+                    l_end = new_label(loc)
 
                     var_cond = visit(st, node.cond)
-                    instructions.append(ir.CondJump(var_cond, l_then, l_end))
+                    instructions.append(ir.CondJump(loc, var_cond, l_then, l_end))
 
                     instructions.append(l_then)
                     visit(st, node.then_clause)
@@ -72,20 +74,20 @@ def generate_ir(root_types: dict[IRVar, Type], root_node: ast.Expression) -> lis
                     instructions.append(l_end)
                     return var_unit
                 else:
-                    l_then = new_label()
-                    l_else = new_label()
-                    l_end = new_label()
+                    l_then = new_label(loc)
+                    l_else = new_label(loc)
+                    l_end = new_label(loc)
 
                     var_cond = visit(st, node.cond)
-                    instructions.append(ir.CondJump(var_cond, l_then, l_else))
+                    instructions.append(ir.CondJump(loc, var_cond, l_then, l_else))
 
                     instructions.append(l_then)
                     var_result = visit(st, node.then_clause)
-                    instructions.append(ir.Jump(l_end))
+                    instructions.append(ir.Jump(loc, l_end))
 
                     instructions.append(l_else)
                     var_else_result = visit(st, node.else_clause)
-                    instructions.append(ir.Copy(var_else_result, var_result))
+                    instructions.append(ir.Copy(loc, var_else_result, var_result))
 
                     instructions.append(l_end)
                     return var_result
@@ -101,12 +103,14 @@ def generate_ir(root_types: dict[IRVar, Type], root_node: ast.Expression) -> lis
 
     if var_types[var_result] == Int:
         instructions.append(ir.Call(
+            root_node.location,
             IRVar('print_int'),
             [var_result],
             new_var(Int)
         ))
     elif var_types[var_result] == Bool:
         instructions.append(ir.Call(
+            root_node.location,
             IRVar('print_bool'),
             [var_result],
             new_var(Bool)

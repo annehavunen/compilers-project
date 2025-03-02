@@ -2,8 +2,8 @@
 from compiler import ast, ir
 from compiler.tokenizer import SourceLocation
 from compiler.ir import IRVar
-from compiler.types import Bool, Int, Unit, Type
-from compiler.symtab import SymTab
+from compiler.types import Bool, Int, Unit, FunType, Type
+from compiler.symtab import SymTab, UNDEFINED
 
 
 def generate_ir(root_types: dict[IRVar, Type], root_node: ast.Expression) -> list[ir.Instruction]:
@@ -60,6 +60,18 @@ def generate_ir(root_types: dict[IRVar, Type], root_node: ast.Expression) -> lis
                 ))
                 return var_result
 
+            case ast.UnaryOp():
+                var_expr = visit(st, node.expr)
+                var_op = st.get(f'unary_{node.op}')
+                var_result = new_var(node.type)
+                instructions.append(ir.Call(
+                    location=loc,
+                    fun=var_op,
+                    args=[var_expr],
+                    dest=var_result
+                ))
+                return var_result
+
             case ast.IfExpression():
                 if node.else_clause is None:
                     l_then = new_label(loc)
@@ -92,6 +104,64 @@ def generate_ir(root_types: dict[IRVar, Type], root_node: ast.Expression) -> lis
                     instructions.append(l_end)
                     return var_result
 
+            case ast.WhileExpression():
+                l_start = new_label(loc)
+                l_body = new_label(loc)
+                l_end = new_label(loc)
+
+                instructions.append(l_start)
+                var_cond = visit(st, node.cond)
+                instructions.append(ir.CondJump(loc, var_cond, l_body, l_end))
+
+                instructions.append(l_body)
+                visit(st, node.do_clause)
+                instructions.append(ir.Jump(loc, l_start))
+
+                instructions.append(l_end)
+                return var_unit
+
+            case ast.VarDeclaration():
+                var = visit(st, node.value)
+                var_result = new_var(node.value.type)
+                st.set(node.name, var_result)
+                instructions.append(ir.Copy(loc, var, var_result))
+                return var_unit
+
+            case ast.Identifier():
+                var = st.get(node.name)
+                if var is UNDEFINED:
+                    raise Exception(f"{loc}: variable '{node.name}' is not set")
+                return var
+
+            case ast.Block():
+                inner_scope = SymTab(parent=st)
+                result = var_unit
+                for expr in node.arguments:
+                    result = visit(inner_scope, expr)
+                return result
+
+            case ast.FunctionCall():
+                func = st.get(node.name)
+                if func is UNDEFINED:
+                    raise Exception(f"{loc}: function '{node.name}' is not defined")
+
+                var_args = [visit(st, arg) for arg in node.arguments]
+
+                fun_type = var_types[func]
+                if isinstance(fun_type, FunType):
+                    var_result = new_var(fun_type.return_type)
+                else:
+                    raise Exception(f"{loc}: unexpected function type")
+
+                instructions.append(ir.Call(
+                    location=loc,
+                    fun=func,
+                    args=var_args,
+                    dest=var_result
+                ))
+
+                return var_result
+
             case _:
                 raise Exception(f"Unsupported AST node: {node}")
 
@@ -106,14 +176,14 @@ def generate_ir(root_types: dict[IRVar, Type], root_node: ast.Expression) -> lis
             root_node.location,
             IRVar('print_int'),
             [var_result],
-            new_var(Int)
+            new_var(Unit)
         ))
     elif var_types[var_result] == Bool:
         instructions.append(ir.Call(
             root_node.location,
             IRVar('print_bool'),
             [var_result],
-            new_var(Bool)
+            new_var(Unit)
         ))
 
     return instructions

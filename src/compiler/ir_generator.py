@@ -48,9 +48,82 @@ def generate_ir(root_types: dict[IRVar, Type], root_node: ast.Expression) -> lis
                 return var
 
             case ast.BinaryOp():
-                var_op = st.get(node.op)
+                if node.op == "=":
+                    if not isinstance(node.left, ast.Identifier):
+                        raise Exception(f"{loc}: left of assignment must be an identifier")
+
+                    var_name = node.left.name
+                    scope = st.find_scope(var_name)
+                    if scope is UNDEFINED:
+                        raise Exception(f"{loc}: variable '{var_name}' is not set")
+
+                    var_left = scope.get_local(var_name)
+                    var_right = visit(scope, node.right)
+
+                    instructions.append(ir.Copy(
+                        location=loc,
+                        source=var_right,
+                        dest=var_left
+                    ))
+
+                    return var_left
+
+                elif node.op == 'and':
+                    l_right = new_label(loc)
+                    l_skip = new_label(loc)
+                    l_end = new_label(loc)
+
+                    var_left = visit(st, node.left)
+                    instructions.append(ir.CondJump(loc, var_left, l_right, l_skip))
+
+                    instructions.append(l_right)
+                    var_right = visit(st, node.right)
+                    var_result = new_var(Bool)
+                    instructions.append(ir.Copy(loc, var_right, var_result))
+                    instructions.append(ir.Jump(loc, l_end))
+
+                    instructions.append(l_skip)
+                    instructions.append(ir.LoadBoolConstant(loc, False, var_result))
+                    instructions.append(ir.Jump(loc, l_end))
+
+                    instructions.append(l_end)
+                    return var_result
+
+                elif node.op == 'or':
+                    l_right = new_label(loc)
+                    l_skip = new_label(loc)
+                    l_end = new_label(loc)
+
+                    var_left = visit(st, node.left)
+                    instructions.append(ir.CondJump(loc, var_left, l_skip, l_right))
+
+                    instructions.append(l_right)
+                    var_right = visit(st, node.right)
+                    var_result = new_var(Bool)
+                    instructions.append(ir.Copy(loc, var_right, var_result))
+                    instructions.append(ir.Jump(loc, l_end))
+
+                    instructions.append(l_skip)
+                    instructions.append(ir.LoadBoolConstant(loc, True, var_result))
+                    instructions.append(ir.Jump(loc, l_end))
+
+                    instructions.append(l_end)
+                    return var_result
+
                 var_left = visit(st, node.left)
                 var_right = visit(st, node.right)
+
+                if node.op in ['==', '!=']:
+                    var_result = new_var(Bool)
+                    instructions.append(ir.Call(
+                        location=loc,
+                        fun=IRVar(node.op),
+                        args=[var_left, var_right],
+                        dest=var_result
+                    ))
+                    return var_result
+
+                var_op = st.get(node.op)
                 var_result = new_var(node.type)
                 instructions.append(ir.Call(
                     location=loc,

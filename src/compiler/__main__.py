@@ -1,6 +1,7 @@
 from base64 import b64encode
 import json
 import re
+import subprocess
 import sys
 from socketserver import ForkingTCPServer, StreamRequestHandler
 from traceback import format_exception
@@ -8,17 +9,28 @@ from typing import Any
 
 from compiler.tokenizer import tokenize
 from compiler.parser import parse
+from compiler.symtab import build_type_symtab, build_ir_dict
 from compiler.type_checker import typecheck
 from compiler.ir_generator import generate_ir
-from compiler.symtab import build_type_symtab, build_ir_dict
+from compiler.assembly_generator import generate_assembly
+from compiler.assembler import assemble, assemble_and_get_executable
 
 
 def call_compiler(source_code: str, input_file_name: str) -> bytes:
-    # *** TODO ***
     # Call your compiler here and return the compiled executable.
     # Raise an exception on compilation error.
-    # *** TODO ***
-    raise NotImplementedError("Compiler not implemented")
+    try:
+        tokens = tokenize(source_code)
+        ast_node = parse(tokens)
+        symtab = build_type_symtab()
+        typecheck(ast_node, symtab)
+        ir_dict = build_ir_dict()
+        ir_instructions = generate_ir(ir_dict, ast_node)
+        asm_code = generate_assembly(ir_instructions)
+        executable = assemble_and_get_executable(asm_code)
+        return executable
+    except Exception as e:
+        raise Exception(f"Compilation failed: {e}")
 
 
 def main() -> int:
@@ -78,7 +90,26 @@ def main() -> int:
         ir_dict = build_ir_dict()
         ir_instructions = generate_ir(ir_dict, ast_node)
         print("\n".join([str(ins) for ins in ir_instructions]))
- 
+    elif command == 'asm':
+        source_code = read_source_code()
+        tokens = tokenize(source_code)
+        ast_node = parse(tokens)
+        symtab = build_type_symtab()
+        typecheck(ast_node, symtab)
+        ir_dict = build_ir_dict()
+        ir_instructions = generate_ir(ir_dict, ast_node)
+        asm_code = generate_assembly(ir_instructions)
+        print(asm_code)
+    elif command == 'run':
+        source_code = read_source_code()
+        tokens = tokenize(source_code)
+        ast_node = parse(tokens)
+        symtab = build_type_symtab()
+        typecheck(ast_node, symtab)
+        ir_dict = build_ir_dict()
+        ir_instructions = generate_ir(ir_dict, ast_node)
+        asm_code = generate_assembly(ir_instructions)
+        assemble(asm_code, 'compiled_program')
     else:
         print(f"Error: unknown command: {command}", file=sys.stderr)
         return 1
